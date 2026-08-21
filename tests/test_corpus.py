@@ -11,7 +11,7 @@ import networkx as nx
 import pytest
 
 from mcta.corpus import candidate_targets, largest_component, load_caltech, to_instance
-from mcta.corpus.cpn import DEFAULT_PATH
+from mcta.corpus.cpn import DEFAULT_PATH, JHU_PATH, load_jhu
 from mcta.model import analyze
 from mcta.structure import measure
 
@@ -70,6 +70,50 @@ def test_derived_instances_pose_a_real_choice(cpn):
             branching += 1
 
     assert branching > 0, "no instance in the sample offers the agent a choice"
+
+
+@pytest.fixture(scope="module")
+def jhu():
+    return load_jhu()
+
+
+@pytest.mark.skipif(not JHU_PATH.exists(), reason="run scripts/fetch_data.sh")
+def test_jhu_extraction_yields_a_dag(jhu):
+    """Prose-derived prerequisites could easily contradict each other; these do not."""
+    assert jhu.number_of_nodes() == 10075
+    assert nx.is_directed_acyclic_graph(jhu)
+    assert jhu.number_of_edges() > 3000
+
+
+@pytest.mark.skipif(not JHU_PATH.exists(), reason="run scripts/fetch_data.sh")
+def test_jhu_extraction_never_makes_a_course_its_own_prerequisite(jhu):
+    """Blurbs name the dependent course too, which must not become an arc."""
+    assert not list(nx.selfloop_edges(jhu))
+
+
+@pytest.mark.skipif(not JHU_PATH.exists(), reason="run scripts/fetch_data.sh")
+def test_trimming_the_dependent_clause_only_ever_removes_arcs(jhu):
+    """The trim is a refinement, so it must be a subgraph of the untrimmed reading."""
+    untrimmed = load_jhu(trim_dependent_clause=False)
+
+    assert set(jhu.edges()) <= set(untrimmed.edges())
+    assert jhu.number_of_edges() < untrimmed.number_of_edges()
+
+
+@pytest.mark.skipif(not JHU_PATH.exists(), reason="run scripts/fetch_data.sh")
+def test_jhu_supplies_the_harder_instances(jhu):
+    """Caltech closures are shallow; the point of this corpus is that it is not.
+
+    Over-approximating disjunctions inflates density, so these widths are upper
+    bounds on the real curriculum - the safe direction for C1.
+    """
+    widths = []
+    for target in candidate_targets(jhu, min_courses=6, min_depth=3):
+        widths.append(measure(to_instance(jhu, target)).treewidth.upper)
+
+    assert len(widths) > 400, "this corpus should be substantially larger than Caltech's"
+    assert max(widths) > 8, "and should reach instances Caltech never produces"
+    assert max(widths) <= 30, "while staying far below the hundreds reported for network data"
 
 
 def test_real_curricula_are_structurally_narrow(cpn):

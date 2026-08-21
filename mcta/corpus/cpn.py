@@ -1,9 +1,15 @@
 """Course-prerequisite networks as task graphs.
 
-Data: Stavrinides & Zuev, *Course-prerequisite networks for analyzing and
-understanding academic curricula*, Applied Network Science 2023, published at
-https://github.com/pstavrin/Course-Prerequisite-Networks. Run
+Two corpora, both published by Stavrinides & Zuev alongside *Course-prerequisite
+networks for analyzing and understanding academic curricula*, Applied Network
+Science 2023, at https://github.com/pstavrin/Course-Prerequisite-Networks. Run
 `scripts/fetch_data.sh` first; the data is not vendored here.
+
+Caltech arrives with a hand-cleaned prerequisite column and is exact. Johns
+Hopkins arrives as catalogue prose and has to be extracted, which makes it larger,
+messier and - importantly - only an upper bound on its own structure; see
+`load_jhu`. Together they give small, exact instances and larger, approximate
+ones, which is the spread the benchmark needs.
 
 A modelling caveat worth stating plainly, because it limits what these instances
 can show. A CPN is a *dependency* graph with conjunctive semantics: an arc from
@@ -28,6 +34,7 @@ answer "how hard is this shape to align", not "what should this student enrol in
 from __future__ import annotations
 
 import csv
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -91,6 +98,70 @@ def load_caltech(path: Path | str = DEFAULT_PATH) -> nx.DiGraph:
         raise ValueError(f"{len(unresolved)} prerequisite references do not name a listed course")
     if not nx.is_directed_acyclic_graph(graph):
         raise ValueError("the prerequisite network contains a cycle")
+
+    return graph
+
+
+JHU_PATH = Path(__file__).resolve().parents[2] / "data" / "cpn" / "jhu.csv"
+
+_COURSE_CODE = re.compile(r"[A-Z]{2}\.\d{3}\.\d{3}")
+# Prerequisite blurbs name the dependent course after a phrase like "prior to
+# enrolling in", so codes past that point are not prerequisites at all.
+_DEPENDENT_CLAUSE = re.compile(
+    r"\bprior to\b|\bbefore (?:taking|enrolling)\b|\bconcurrent", re.IGNORECASE
+)
+
+
+def load_jhu(path: Path | str = JHU_PATH, *, trim_dependent_clause: bool = True) -> nx.DiGraph:
+    """Read the Johns Hopkins course listing into a prerequisite DAG.
+
+    Unlike the Caltech file, this one carries no cleaned prerequisite column, only
+    the catalogue's prose - "You must take AS.440.602 AND AS.440.606 prior to
+    enrolling in AS.440.614". Course codes are extracted by pattern, the clause
+    naming the dependent course is trimmed, and self-references are dropped.
+
+    **This over-approximates the real dependency structure**, and deliberately so.
+    Roughly two in five blurbs express a disjunction - "one of the following:
+    X OR Y" - and reading every mentioned code as a requirement turns that choice
+    into two obligations, adding arcs that the catalogue does not. The direction is
+    the safe one for claim C1: treewidth never decreases when arcs are added, so a
+    measurement taken here is an upper bound on the truth. If even the
+    over-connected reading is narrow, the real curriculum is narrower still.
+
+    What this graph cannot support is any claim about a *particular* course's
+    requirements. It is a shape to measure, not a catalogue to advise from.
+    """
+    path = Path(path)
+    if not path.exists():
+        raise FileNotFoundError(
+            f"{path} is missing; run scripts/fetch_data.sh to fetch the published data"
+        )
+
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+
+    graph = nx.DiGraph()
+    for row in rows:
+        code = row["Course"].strip()
+        if code:
+            graph.add_node(
+                code,
+                course=Course(code, row["Title"].strip(), row["Department Name"].strip()),
+            )
+
+    for row in rows:
+        dependent = row["Course"].strip()
+        blurb = row["Pre Req"]
+        if trim_dependent_clause:
+            blurb = _DEPENDENT_CLAUSE.split(blurb)[0]
+        for prerequisite in _COURSE_CODE.findall(blurb):
+            # Codes may name courses absent from the listing, and a blurb may name
+            # its own course; neither is an arc.
+            if prerequisite != dependent and prerequisite in graph:
+                graph.add_edge(prerequisite, dependent)
+
+    if not nx.is_directed_acyclic_graph(graph):
+        raise ValueError("the extracted prerequisite network contains a cycle")
 
     return graph
 

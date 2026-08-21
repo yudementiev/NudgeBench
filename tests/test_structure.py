@@ -49,6 +49,20 @@ def test_minor_min_width_never_overshoots(graph, truth, name):
     assert minor_min_width(graph) <= truth, f"{name}: floor above the true treewidth"
 
 
+def test_bounds_do_not_depend_on_how_the_graph_was_built():
+    """Published numbers have to reproduce, so tie-breaking must not follow insertion order."""
+    grid = nx.grid_2d_graph(6, 6)
+    forward = nx.Graph()
+    forward.add_nodes_from(sorted(grid.nodes()))
+    forward.add_edges_from(grid.edges())
+    backward = nx.Graph()
+    backward.add_nodes_from(sorted(grid.nodes(), reverse=True))
+    backward.add_edges_from(grid.edges())
+
+    assert minor_min_width(forward) == minor_min_width(backward)
+    assert treewidth_bounds(forward) == treewidth_bounds(backward)
+
+
 def test_minor_min_width_beats_degeneracy_somewhere():
     """Contracting rather than deleting is the point; on a grid it pays off."""
     grid = nx.grid_2d_graph(5, 5)

@@ -90,8 +90,13 @@ def minor_min_width(graph: nx.Graph) -> int:
     working.remove_edges_from(nx.selfloop_edges(working))
     best = 0
 
+    # Ties on degree are broken by name rather than by iteration order, so the
+    # bound a run reports does not depend on how the graph object was built.
+    def by_degree(node):
+        return working.degree(node), str(node)
+
     while working.number_of_nodes() > 1:
-        victim = min(working, key=lambda v: working.degree(v))
+        victim = min(working, key=by_degree)
         degree = working.degree(victim)
         best = max(best, degree)
         if degree == 0:
@@ -100,7 +105,7 @@ def minor_min_width(graph: nx.Graph) -> int:
         # Contract into the neighbour that shares the least, which keeps the
         # resulting minor sparse and the bound as tight as possible.
         neighbours = list(working.neighbors(victim))
-        into = min(neighbours, key=lambda u: working.degree(u))
+        into = min(neighbours, key=by_degree)
         for other in neighbours:
             if other != into:
                 working.add_edge(into, other)

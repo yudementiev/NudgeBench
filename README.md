@@ -25,14 +25,16 @@ is developed; this repository is its first empirical evaluation.
 
 ## First result (C1)
 
-Real curricula are structurally narrow. The Caltech course-prerequisite network
-has treewidth between 8 and 12, and the 169 task graphs derived from it have
-treewidth at most 5 and routes at most 7 courses long — against the hundreds that
-Maniu et al. report for database and road networks. Details and caveats in
-[REFERENCES.md](REFERENCES.md).
+Real curricula are structurally narrow. Across two published course-prerequisite
+networks, whole networks measure treewidth 8–12 (Caltech) and at most 25 (Johns
+Hopkins), and the **702 task graphs** derived from them have treewidth at most 11
+with routes at most 12 courses long — against the hundreds that Maniu et al.
+report for database and road networks. Caveats, including what the Johns Hopkins
+figures can and cannot claim, are in [REFERENCES.md](REFERENCES.md).
 
 ```bash
-./scripts/fetch_data.sh    # fetch the published CPN data (not vendored)
+./scripts/fetch_data.sh              # fetch the published data (not vendored)
+.venv/bin/python scripts/census.py   # reproduce the numbers above
 ```
 
 Sources for every externally grounded number are in

@@ -51,14 +51,15 @@ The citation is not fatal, because their corpus is database instances, social an
 road networks — not task graphs. Our claim concerns layered, human-designed
 workflows, which plausibly behave differently.
 
-**Measured, on the Caltech CPN.** The claim holds; the citation still does not
-support it. Our own numbers:
+**Measured, on two real corpora.** The claim holds; the citation still does not
+support it. Reproduce with `scripts/census.py`:
 
 | Graph | Treewidth | p | \|L\| |
 |---|---|---|---|
-| Full network (771 courses, 772 relations) | **8–12** | — | — |
-| Largest component (436, 747) | **8–12** | — | — |
-| Derived MCTA instances (169 closures) | median **3**, max **5** | median 5, max 7 | median 6, max 8 |
+| Caltech, largest component (436 nodes, 747 links) | **8–12** | — | — |
+| Caltech, 169 derived instances | median **3**, max **5** | median 5, max 7 | median 6, max 8 |
+| Johns Hopkins, largest component (665, 1708) | **≤ 25** | — | — |
+| Johns Hopkins, 533 derived instances | median **3**, max **11** | median 6, max 12 | median 7, max 13 |
 
 Against hundreds for road networks in Maniu et al. So the right move is to cite our
 own measurement for the claim and cite Maniu et al. only for the contrast — that
@@ -66,11 +67,19 @@ structural narrowness is a property of *task* graphs specifically, not of networ
 data generally. That is a stronger sentence than the one currently in the paper,
 and it is ours.
 
-Two caveats to carry into the write-up. The |L| figures assume uniform course
-weights, since the published data has no workload column; |W| = 1 is an assumption,
-not a measurement, and realistic weights would widen |L|. And the derived instances
-are small (7–17 nodes), because Caltech prerequisite closures are shallow — real,
-but easy, so the corpus needs harder material alongside them.
+Three caveats to carry into the write-up.
+
+- The |L| figures assume **uniform course weights**, since neither file carries a
+  workload column. |W| = 1 is an assumption, not a measurement, and realistic
+  weights would widen |L|.
+- The Johns Hopkins network is **extracted from catalogue prose**, and roughly two
+  in five prerequisite blurbs express a disjunction that the extraction reads as a
+  conjunction. That adds arcs, and since treewidth never falls when arcs are added,
+  the figures above are upper bounds on the real curriculum — the safe direction
+  for C1, but it means only the "≤ 25" is a claim about Johns Hopkins itself. The
+  lower bound of 16 describes our reading, not their catalogue.
+- Caltech closures are **small** (7–17 nodes). Johns Hopkins supplies the harder
+  material, up to 55 nodes and treewidth 11, which is why both are in the corpus.
 
 ## Topological families
 
