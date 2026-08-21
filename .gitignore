@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+
+# Experiment outputs and API transcripts are regenerated, not versioned.
+runs/
+*.jsonl
+.env
+
+.claude/settings.local.json
