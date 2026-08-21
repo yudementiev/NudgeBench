@@ -46,6 +46,27 @@ open question, are in [REFERENCES.md](REFERENCES.md).
 .venv/bin/python scripts/census.py             # reproduce every number above
 ```
 
+## Second result (C2)
+
+The intuitive fix is usually optimal and occasionally expensive. Against the
+witness-guided heuristic — watch the agent take a route it should not, block one
+step of it, repeat — the exact optimum is the same answer on most real instances
+and much cheaper on a minority:
+
+| Corpus | solved | optimality proved | heuristic worse | worst ratio |
+|---|---|---|---|---|
+| Caltech closures | 65 | 65 | 10 | **2.00×** |
+| Johns Hopkins closures (≤28 arcs) | 87 | 74 | 2 | **2.67×** |
+
+Exact solving is milliseconds on the median instance and seconds on the tail; the
+search budget runs out between 20 and 28 arcs, which is where the hardness starts
+to bite in practice. Note that the instances where the heuristic loses have
+treewidth 2–3 — being narrow does not make the greedy choice right.
+
+```bash
+.venv/bin/python scripts/e3.py
+```
+
 Sources for every externally grounded number are in
 [REFERENCES.md](REFERENCES.md), including one citation in the paper that needs
 revisiting.
