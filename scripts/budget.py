@@ -126,7 +126,46 @@ def main() -> None:
         return OUTPUT_SCENARIOS["reasoning" if model.reasoning else "brief"]
 
     print()
-    print("Recommended plan")
+    print("Phase 1 - the go/no-go run, capped at $50")
+    print("-" * 58)
+    print("  Halved repetitions: 10 per condition, not 20. Enough to see whether an")
+    print("  effect exists at all; phase 2 restores 20 for publishable intervals.")
+    print()
+
+    by_name = {model.name: model for model in MODELS}
+    phase1_e1 = ["gpt-5.6-sol", "claude-opus-5", "gemini-3.7-flash",
+                 "deepseek-v4-pro", "deepseek-v4-flash"]
+    running = 0.0
+
+    for name in phase1_e1:
+        model = by_name[name]
+        spend = cost(model, E1, scenario(model)) / 2
+        running += spend
+        print(f"  E1  {name:<22}{model.note:<32}${spend:6.2f}")
+
+    for name in ("gpt-5.6-sol", "claude-opus-5"):
+        model = by_name[name]
+        spend = cost(model, E1, scenario(model)) / 2 * (E1_EFFORT_LEVELS - 1)
+        running += spend
+        print(f"  E1  {name:<22}{'+2 more reasoning-effort levels':<32}${spend:6.2f}")
+
+    flash = by_name["gemini-3.7-flash"]
+    spend = cost(flash, E4, scenario(flash))
+    running += spend
+    print(f"  E4  {flash.name:<22}{'lean, 12 x 3 x 20 rollouts':<32}${spend:6.2f}")
+
+    print(f"  {'subtotal':<58}${running:6.2f}")
+    print(f"  {'+40% for pilots, reruns, failed parses':<58}${running * 0.4:6.2f}")
+    print(f"  {'PHASE 1 TOTAL':<58}${running * 1.4:6.2f}")
+
+    print()
+    print("Deferred to phase 2:")
+    print("  - 20 repetitions throughout, for publishable confidence intervals")
+    print("  - the four remaining models (terra, luna, qwen x2)")
+    print("  - E4 on a frontier model, once phase 1 shows the effect is there to steer")
+
+    print()
+    print("Full plan, for reference")
     print("-" * 58)
 
     wide = sum(cost(m, E1, scenario(m)) for m in MODELS)
