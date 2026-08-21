@@ -10,3 +10,6 @@ runs/
 .env
 
 .claude/settings.local.json
+
+# Fetched corpora belong to their authors; scripts/fetch_data.sh retrieves them.
+data/

@@ -18,9 +18,22 @@ is developed; this repository is its first empirical evaluation.
 | Alignment check and witness extraction (`mcta.align`) | working |
 | Probe harness, β recovery (`mcta.probe`) | working, validated by round trip |
 | Instance generators (`mcta.generate`) | working, calibrated to attested β |
-| Corpus of real task DAGs | not started — see `REFERENCES.md` |
+| Structural measurement (`mcta.structure`) | working, certified bounds |
+| Course-prerequisite corpus (`mcta.corpus`) | working, matches published figures |
 | Solvers (ILP, heuristics, treewidth DP) | not started |
 | LLM client for E1 | blocked on API access |
+
+## First result (C1)
+
+Real curricula are structurally narrow. The Caltech course-prerequisite network
+has treewidth between 8 and 12, and the 169 task graphs derived from it have
+treewidth at most 5 and routes at most 7 courses long — against the hundreds that
+Maniu et al. report for database and road networks. Details and caveats in
+[REFERENCES.md](REFERENCES.md).
+
+```bash
+./scripts/fetch_data.sh    # fetch the published CPN data (not vendored)
+```
 
 Sources for every externally grounded number are in
 [REFERENCES.md](REFERENCES.md), including one citation in the paper that needs

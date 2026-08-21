@@ -49,10 +49,28 @@ exponential in treewidth unusable.
 
 The citation is not fatal, because their corpus is database instances, social and
 road networks — not task graphs. Our claim concerns layered, human-designed
-workflows, which plausibly behave differently. But the reference does not support
-the sentence it is attached to, and E2 is what would settle the question. This is
-claim **C1** in the workshop proposal, and it is now concrete rather than
-rhetorical.
+workflows, which plausibly behave differently.
+
+**Measured, on the Caltech CPN.** The claim holds; the citation still does not
+support it. Our own numbers:
+
+| Graph | Treewidth | p | \|L\| |
+|---|---|---|---|
+| Full network (771 courses, 772 relations) | **8–12** | — | — |
+| Largest component (436, 747) | **8–12** | — | — |
+| Derived MCTA instances (169 closures) | median **3**, max **5** | median 5, max 7 | median 6, max 8 |
+
+Against hundreds for road networks in Maniu et al. So the right move is to cite our
+own measurement for the claim and cite Maniu et al. only for the contrast — that
+structural narrowness is a property of *task* graphs specifically, not of network
+data generally. That is a stronger sentence than the one currently in the paper,
+and it is ours.
+
+Two caveats to carry into the write-up. The |L| figures assume uniform course
+weights, since the published data has no workload column; |W| = 1 is an assumption,
+not a measurement, and realistic weights would widen |L|. And the derived instances
+are small (7–17 nodes), because Caltech prerequisite closures are shallow — real,
+but easy, so the corpus needs harder material alongside them.
 
 ## Topological families
 
