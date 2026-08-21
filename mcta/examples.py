@@ -72,3 +72,25 @@ def two_route_trap(
     graph.add_edge("s", "detour", key=0, weight=detour_weight)
     graph.add_edge("detour", "t", key=0, weight=detour_weight)
     return Instance(graph=graph, source="s", target="t", beta=beta, reward=reward)
+
+
+def procrastination_trap(beta: float = 0.5, reward: float = 40.0) -> Instance:
+    """An instance where the agent's stated plan and its actual route come apart.
+
+    From s the agent has no choice but to step to m, and the cheapest route on from
+    m is the steady one (6 + 6). A naive agent therefore intends s -> m -> x -> t,
+    for a total of 13. On arriving at m it re-evaluates: the tempting arc costs 1
+    now against a discounted 14 later, which beats 6 now against a discounted 6, so
+    it defects and spends 16 instead.
+
+    Nothing about the graph changed between the two moments - only where the agent
+    was standing. This is the cleanest possible demonstration of the behavior E1
+    probes for, and the smallest graph that produces it.
+    """
+    graph = nx.MultiDiGraph()
+    graph.add_edge("s", "m", key=0, weight=1.0)
+    graph.add_edge("m", "steady", key=0, weight=6.0)
+    graph.add_edge("steady", "t", key=0, weight=6.0)
+    graph.add_edge("m", "tempting", key=0, weight=1.0)
+    graph.add_edge("tempting", "t", key=0, weight=14.0)
+    return Instance(graph=graph, source="s", target="t", beta=beta, reward=reward)
