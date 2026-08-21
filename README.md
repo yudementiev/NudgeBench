@@ -16,9 +16,15 @@ is developed; this repository is its first empirical evaluation.
 |---|---|
 | Kleinberg–Oren simulator (`mcta.model`) | working, validated against the paper |
 | Alignment check and witness extraction (`mcta.align`) | working |
-| Corpus of real task DAGs | not started |
+| Probe harness, β recovery (`mcta.probe`) | working, validated by round trip |
+| Instance generators (`mcta.generate`) | working, calibrated to attested β |
+| Corpus of real task DAGs | not started — see `REFERENCES.md` |
 | Solvers (ILP, heuristics, treewidth DP) | not started |
-| Agent-in-the-loop protocol | not started |
+| LLM client for E1 | blocked on API access |
+
+Sources for every externally grounded number are in
+[REFERENCES.md](REFERENCES.md), including one citation in the paper that needs
+revisiting.
 
 ## Validation
 
