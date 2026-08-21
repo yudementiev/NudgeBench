@@ -25,16 +25,25 @@ is developed; this repository is its first empirical evaluation.
 
 ## First result (C1)
 
-Real curricula are structurally narrow. Across two published course-prerequisite
-networks, whole networks measure treewidth 8–12 (Caltech) and at most 25 (Johns
-Hopkins), and the **702 task graphs** derived from them have treewidth at most 11
-with routes at most 12 courses long — against the hundreds that Maniu et al.
-report for database and road networks. Caveats, including what the Johns Hopkins
-figures can and cannot claim, are in [REFERENCES.md](REFERENCES.md).
+Real task graphs are narrow — but narrowness is not enough.
+
+Across two published course-prerequisite networks, whole networks measure
+treewidth 8–12 (Caltech) and at most 25 (Johns Hopkins), and the **702 task
+graphs** derived from them have treewidth at most 11 — against the hundreds that
+Maniu et al. report for database and road networks. Forty-two real scientific
+workflow traces agree: seismology runs 601 tasks at treewidth 2.
+
+The interesting half is where this breaks. Theorem 1 of the paper pays
+(|L|+1)^tw, and two workflow families are out of reach despite modest treewidth
+because their path weights are nearly all distinct — montage reaches 10⁸¹ states,
+and its treewidth grows with problem size rather than staying put. **A graph can
+be narrow and still hopeless.** Details, and what this implies for the paper's
+open question, are in [REFERENCES.md](REFERENCES.md).
 
 ```bash
-./scripts/fetch_data.sh              # fetch the published data (not vendored)
-.venv/bin/python scripts/census.py   # reproduce the numbers above
+./scripts/fetch_data.sh                        # course-prerequisite networks
+.venv/bin/python scripts/fetch_wfinstances.py  # workflow traces (~17 MB)
+.venv/bin/python scripts/census.py             # reproduce every number above
 ```
 
 Sources for every externally grounded number are in

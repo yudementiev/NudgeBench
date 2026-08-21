@@ -67,6 +67,46 @@ structural narrowness is a property of *task* graphs specifically, not of networ
 data generally. That is a stronger sentence than the one currently in the paper,
 and it is ours.
 
+### Scientific workflows — where the simple story breaks
+
+Data: **WfCommons WfInstances**, https://github.com/wfcommons/WfInstances (LGPL-3.0)
+— traces of real production runs in WfFormat, with **measured task runtimes**, so
+these are the first instances whose weights are not an assumption. Fetch with
+`scripts/fetch_wfinstances.py`; 42 traces across 7 applications.
+
+| Application | tasks | treewidth | \|L\| | (\|L\|+1)^tw |
+|---|---|---|---|---|
+| seismology | 101 → 601 | **2** | 97 → 415 | 10⁴·⁰ → 10⁵·² |
+| epigenomics | 41 → 233 | **2** | 50 → 286 | 10³·⁴ → 10⁴·⁹ |
+| cycles | 67 → 266 | **3** | 110 → 410 | 10⁶·¹ → 10⁷·⁸ |
+| 1000genome | 52 → 208 | **3** | 365 → 1442 | 10⁷·⁷ → 10⁹·⁵ |
+| srasearch | 22 → 42 | **3** | 32 → 62 | 10⁴·⁶ → 10⁵·⁴ |
+| soykb | 96 → 336 | 7 → **12** | 1665 → 6610 | 10²²·⁶ → 10⁴⁵·⁸ |
+| montage | 58 → 472 | 5 → **18** | 1018 → 34986 | 10¹⁸·⁰ → 10⁸¹·⁸ |
+
+**Treewidth alone is not the story, and this is the finding worth reporting.**
+Five of seven families are trivially tractable — seismology runs 601 tasks at
+treewidth 2. But montage's treewidth *grows with problem size*, 5 to 18, so the
+family is not narrow in any size-independent sense; and both montage and soykb are
+out of reach regardless, because Theorem 1 pays (|L|+1)^tw and their path weights
+are nearly all distinct. A graph can be narrow and still hopeless.
+
+This sharpens rather than damages the paper. The theorem already says the bound is
+governed by treewidth *and* weight diversity together; what the corpus shows is
+that real instances genuinely fall on both sides of that line, which is an argument
+for the theorem's form rather than against it. It also gives the open question in
+the Conclusion — whether an f(tw)·m^g(p) algorithm exists — a concrete
+constituency: montage has p = 9 at every size, so an algorithm exponential in
+treewidth but only polynomial in p would rescue exactly the family that the current
+one cannot.
+
+One practical lever falls out: rounding runtimes to whole seconds collapses |L|
+sharply in some families (montage 34986 → 385, seismology 415 → 5) and barely at
+all in others (srasearch 32 → 29). How coarsely the principal is willing to reason
+is therefore a design parameter of the intervention, not an implementation detail.
+
+### Caveats
+
 Three caveats to carry into the write-up.
 
 - The |L| figures assume **uniform course weights**, since neither file carries a
