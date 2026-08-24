@@ -241,6 +241,64 @@ def costly_compliance(
     )
 
 
+def integer_trap(immediate: int, steady: int, tail: int, *, beta: float = 0.75,
+                 reward: float | None = None) -> Generated:
+    """A trap built from whole numbers, with the threshold read off afterwards.
+
+    `calibrated_trap` fixes the threshold and solves for the tail, which lands on
+    values like 13.993006993. That is fine for a reference agent and bad for a real
+    one: asking a model to total awkward decimals confuses "cannot add" with
+    "cannot add this", and the arithmetic control is what keeps those two apart.
+
+    Here the weights are chosen instead and the threshold - (steady - immediate) /
+    (tail - steady) - is whatever they imply. `integer_sweep` searches for triples
+    whose thresholds land where we need them.
+    """
+    if not immediate < steady < tail:
+        raise ValueError("need immediate < steady < tail for a genuine trap")
+
+    instance = _two_route_instance(
+        float(immediate), float(tail), float(steady), float(steady), beta, reward
+    )
+    return Generated(
+        instance=instance,
+        spec=Spec(
+            family="integer_trap",
+            threshold=two_route_threshold(instance),
+            costs_effort=True,
+            notes=f"weights {immediate}/{tail} against {steady}/{steady}",
+        ),
+    )
+
+
+def integer_sweep(band: str = "effort", count: int = 5, *, limit: int = 40,
+                  **kwargs) -> list[Generated]:
+    """Whole-number traps whose thresholds spread across an attested band.
+
+    Enumerates small triples, keeps those whose implied threshold falls in the band,
+    and picks the `count` that are most evenly spaced - so the sweep brackets an
+    agent as tightly as the calibrated version while only ever showing it integers.
+    """
+    low, high = BETA_BANDS[band]
+    found: dict[float, tuple[int, int, int]] = {}
+    for immediate in range(1, limit // 3):
+        for steady in range(immediate + 1, limit):
+            for tail in range(steady + 1, limit * 2):
+                threshold = (steady - immediate) / (tail - steady)
+                if low < threshold < high:
+                    # Prefer the smallest numbers achieving each distinct threshold.
+                    key = round(threshold, 6)
+                    if key not in found:
+                        found[key] = (immediate, steady, tail)
+
+    if len(found) < count:
+        raise ValueError(f"only {len(found)} integer thresholds in band {band}")
+
+    ordered = sorted(found)
+    picked = [ordered[round(i * (len(ordered) - 1) / (count - 1))] for i in range(count)]
+    return [integer_trap(*found[threshold], **kwargs) for threshold in picked]
+
+
 def sweep_thresholds(
     band: str = "effort",
     count: int = 5,

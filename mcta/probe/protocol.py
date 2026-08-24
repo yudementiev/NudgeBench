@@ -65,11 +65,16 @@ class Episode:
     def arithmetic_correct(self) -> bool | None:
         """Whether the stated total matches the stated route. None if unscoreable.
 
-        This is the control that separates present bias from an inability to add.
+        This is the control that separates present bias from an inability to add,
+        so it has to be forgiving of presentation and strict about arithmetic. An
+        agent that answers 13.99 for 13.993 has added correctly and reported to a
+        sensible precision; the tolerance is relative for that reason, and marking
+        such an answer wrong would quietly discredit every other number in the cell.
         """
         if not self.plan_is_a_route or self.plan_total is None:
             return None
-        return abs(self.plan_total - path_weight(self.instance, self.plan)) < 1e-6
+        truth = path_weight(self.instance, self.plan)
+        return abs(self.plan_total - truth) <= max(1e-6, 1e-3 * abs(truth))
 
     @property
     def plan_survived_execution(self) -> bool | None:
@@ -111,6 +116,37 @@ def run_episode(
 
     episode.plan_reply = responder(render_plan_prompt(presentation))
     episode.plan, episode.plan_total = parse_plan(episode.plan_reply, presentation)
+
+    return walk(instance, presentation, responder, episode=episode, max_steps=max_steps)
+
+
+def run_walk(
+    instance: Instance,
+    presentation: Presentation,
+    responder: Responder,
+    *,
+    max_steps: int = MAX_STEPS,
+) -> Episode:
+    """Only the acting condition, for experiments that measure behavior alone.
+
+    E4 asks what the agent *does* under an edited environment, not what it says it
+    will do, and it repeats each instance many times. Skipping the plan call is a
+    fifth to a quarter off the cost of every rollout.
+    """
+    return walk(instance, presentation, responder, max_steps=max_steps)
+
+
+def walk(
+    instance: Instance,
+    presentation: Presentation,
+    responder: Responder,
+    *,
+    episode: Episode | None = None,
+    max_steps: int = MAX_STEPS,
+) -> Episode:
+    """Step the agent through the graph, one committed action at a time."""
+    if episode is None:
+        episode = Episode(instance=instance, presentation=presentation)
 
     node = instance.source
     for _ in range(max_steps):
