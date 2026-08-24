@@ -37,16 +37,35 @@ from mcta.probe.analyze import Cell  # noqa: E402
 
 RUNS = Path(__file__).resolve().parents[1] / "runs"
 
-# USD per million tokens, from the OpenRouter model list. Extend as models are added.
+# USD per million tokens, with ids taken verbatim from the OpenRouter model list -
+# a near-miss id fails the run on its first call. Verify against
+# https://openrouter.ai/api/v1/models before a campaign; ids carry date suffixes
+# that change.
 PRICES = {
     "anthropic/claude-opus-5": Pricing(5.00, 25.00),
-    "openai/gpt-5.6-sol": Pricing(2.50, 15.00),
+    "openai/gpt-5.6-sol": Pricing(2.00, 10.00),
     "openai/gpt-5.6-terra": Pricing(2.00, 12.00),
     "openai/gpt-5.6-luna": Pricing(0.20, 1.20),
     "google/gemini-3.7-flash": Pricing(0.375, 1.875),
+    "google/gemini-3.6-flash": Pricing(0.75, 3.75),
     "qwen/qwen3.8-max": Pricing(2.00, 6.00),
-    "deepseek/deepseek-v4-pro": Pricing(1.188, 3.564),
-    "deepseek/deepseek-v4-flash": Pricing(0.08, 0.18),
+    "qwen/qwen3.8-27b": Pricing(0.40, 3.00),
+    "deepseek/deepseek-v4-pro-20260813": Pricing(1.122, 3.366),
+    "deepseek/deepseek-v4-flash-0731": Pricing(0.14, 0.28),
+}
+
+# Models whose supported_parameters include `temperature`. E4 measures a fraction
+# over the sampling distribution, so it can only run where sampling is controllable;
+# the GPT-5.6 family lists `seed` but not `temperature`, which rules it out for that
+# experiment while leaving it perfectly good for E1.
+SAMPLING_MODELS = {
+    "anthropic/claude-opus-5",
+    "google/gemini-3.7-flash",
+    "google/gemini-3.6-flash",
+    "qwen/qwen3.8-max",
+    "qwen/qwen3.8-27b",
+    "deepseek/deepseek-v4-pro-20260813",
+    "deepseek/deepseek-v4-flash-0731",
 }
 
 

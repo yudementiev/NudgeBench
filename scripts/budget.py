@@ -28,17 +28,17 @@ class Model:
     note: str = ""
 
 
-# Rates in USD per million tokens, read from the OpenRouter model list.
+# Rates in USD per million tokens, verified against the OpenRouter model list.
 MODELS = [
     Model("claude-opus-5", 5.00, 25.00, True, "frontier reference"),
-    Model("gpt-5.6-sol", 2.50, 15.00, True, "frontier, other lab"),
+    Model("gpt-5.6-sol", 2.00, 10.00, True, "frontier, other lab; no temperature"),
     Model("gpt-5.6-terra", 2.00, 12.00, True, "mid frontier"),
     Model("qwen3.8-max", 2.00, 6.00, False, "open-weight frontier"),
-    Model("deepseek-v4-pro", 1.19, 3.56, False, "open-weight, cheap output"),
+    Model("deepseek-v4-pro", 1.122, 3.366, False, "open-weight, cheap output"),
     Model("gemini-3.7-flash", 0.375, 1.875, False, "cheap, high volume"),
     Model("gpt-5.6-luna", 0.20, 1.20, False, "small model, weak arithmetic expected"),
-    Model("qwen3.8-27b", 0.45, 3.20, False, "small open weight"),
-    Model("deepseek-v4-flash", 0.08, 0.18, False, "cheapest usable"),
+    Model("qwen3.8-27b", 0.40, 3.00, False, "small open weight"),
+    Model("deepseek-v4-flash", 0.14, 0.28, False, "cheapest usable"),
 ]
 
 

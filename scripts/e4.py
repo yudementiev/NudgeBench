@@ -42,7 +42,7 @@ from mcta.probe.protocol import run_walk  # noqa: E402
 from mcta.solve import greedy_witness_guided, minimalize, solve_exact  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.e1 import PRICES  # noqa: E402  reuse the one price list
+from scripts.e1 import PRICES, SAMPLING_MODELS  # noqa: E402  one price list
 from scripts.e3 import pick_critical  # noqa: E402  reuse E3's selection exactly
 
 RUNS = Path(__file__).resolve().parents[1] / "runs"
@@ -172,6 +172,13 @@ def main() -> int:
     else:
         if args.model not in PRICES:
             print(f"No price on file for {args.model}")
+            return 2
+        if args.model not in SAMPLING_MODELS and args.temperature > 0:
+            print(f"{args.model} does not list temperature among its parameters.")
+            print("E4 measures a fraction over the sampling distribution, so its")
+            print("result would be meaningless here. Pick a model from:")
+            for name in sorted(SAMPLING_MODELS):
+                print(f"  {name}")
             return 2
         RUNS.mkdir(exist_ok=True)
         ledger = Ledger(cap=args.cap)
