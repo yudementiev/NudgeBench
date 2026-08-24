@@ -29,6 +29,26 @@ from pathlib import Path
 ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 OPENROUTER_FEE = 0.055
 
+ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+
+
+def load_env(path: Path | str = ENV_FILE) -> None:
+    """Read KEY=value lines from `.env` into the environment, if it exists.
+
+    Saves the commonest setup failure, which is exporting a key in one shell and
+    running the experiment from another. A variable already set in the environment
+    always wins, so an explicit export still overrides the file.
+    """
+    path = Path(path)
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        name, _, value = line.partition("=")
+        os.environ.setdefault(name.strip(), value.strip().strip("'\""))
+
 
 class BudgetExceeded(RuntimeError):
     """Raised instead of making a call that would cross the spending ceiling."""
@@ -139,6 +159,8 @@ class OpenRouter:
         self.pricing = pricing
         self.ledger = ledger
         self.transcript = transcript
+        if api_key is None:
+            load_env()
         self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY", "")
         self.temperature = temperature
         self.effort = effort
@@ -161,7 +183,9 @@ class OpenRouter:
 
         if not self.api_key and self._uses_network:
             raise RuntimeError(
-                "OPENROUTER_API_KEY is not set; export it or pass api_key explicitly"
+                "OPENROUTER_API_KEY is not set. Put it in .env at the repository "
+                f"root ({ENV_FILE}) as OPENROUTER_API_KEY=sk-or-v1-... , or export "
+                "it in this shell. See SETUP.md."
             )
 
         # Charge the worst case against the cap before spending it, so a run stops

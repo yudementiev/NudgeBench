@@ -216,3 +216,39 @@ def test_the_client_drives_a_real_episode(tmp_path):
     assert episode.reached_goal
     assert episode.plan_is_a_route and episode.arithmetic_correct
     assert episode.plan_survived_execution is True
+
+
+# --- picking the key up -----------------------------------------------------
+
+
+def test_dotenv_is_read_when_the_shell_has_no_key(tmp_path, monkeypatch):
+    """Exporting in one shell and running from another is the commonest slip."""
+    from mcta.probe.client import load_env
+
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    env = tmp_path / ".env"
+    env.write_text("# a comment\nOPENROUTER_API_KEY='sk-or-v1-from-file'\n\n")
+
+    load_env(env)
+
+    import os
+    assert os.environ["OPENROUTER_API_KEY"] == "sk-or-v1-from-file"
+
+
+def test_an_exported_key_beats_the_file(tmp_path, monkeypatch):
+    from mcta.probe.client import load_env
+
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-v1-exported")
+    env = tmp_path / ".env"
+    env.write_text("OPENROUTER_API_KEY=sk-or-v1-from-file\n")
+
+    load_env(env)
+
+    import os
+    assert os.environ["OPENROUTER_API_KEY"] == "sk-or-v1-exported"
+
+
+def test_a_missing_dotenv_is_not_an_error(tmp_path):
+    from mcta.probe.client import load_env
+
+    load_env(tmp_path / "nothing-here")

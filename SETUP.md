@@ -28,19 +28,26 @@ Optionally set an expiry date.
 
 ## 3. Point the code at it
 
-```bash
-export OPENROUTER_API_KEY="sk-or-v1-..."
-```
-
-To keep it out of your shell history and out of git, put it in a `.env` file
-instead — `.env` is already gitignored:
+Create a `.env` file in the repository root. The code reads it by itself — there
+is nothing to source, and it works from any shell and any directory:
 
 ```bash
-echo 'OPENROUTER_API_KEY=sk-or-v1-...' > .env
-set -a && source .env && set +a
+cd "/Users/yuru/Inconsistent Planning"
+printf 'OPENROUTER_API_KEY=sk-or-v1-PASTE_YOURS_HERE\n' > .env
+chmod 600 .env
 ```
 
-Never paste the key into a file that is tracked, and never into a prompt.
+`.env` is gitignored, so the key cannot be committed by accident. Verify:
+
+```bash
+git check-ignore -v .env      # should print the .gitignore rule
+git status --short             # .env must not appear
+```
+
+An `export OPENROUTER_API_KEY=...` in the shell still works and takes precedence
+over the file, which is handy for running one command against a different key.
+
+Never paste the key into a tracked file, and never into a prompt to a model.
 
 ## 4. Check it works, for about a cent
 
