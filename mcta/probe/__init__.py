@@ -1,5 +1,6 @@
 """E1: does an LLM agent making local decisions plan like a present-biased one?"""
 
+from .client import BudgetExceeded, Ledger, OpenRouter, Pricing, Transcript, probe_capabilities
 from .fit import BetaFit, Constraint, beta_interval
 from .protocol import Episode, ReferenceAgent, Responder, run_episode
 from .serialize import (
@@ -16,6 +17,12 @@ from .serialize import (
 __all__ = [
     "FRAMINGS",
     "BetaFit",
+    "BudgetExceeded",
+    "Ledger",
+    "OpenRouter",
+    "Pricing",
+    "Transcript",
+    "probe_capabilities",
     "Constraint",
     "Episode",
     "Presentation",

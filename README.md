@@ -20,8 +20,10 @@ is developed; this repository is its first empirical evaluation.
 | Instance generators (`mcta.generate`) | working, calibrated to attested β |
 | Structural measurement (`mcta.structure`) | working, certified bounds |
 | Course-prerequisite corpus (`mcta.corpus`) | working, matches published figures |
-| Solvers (ILP, heuristics, treewidth DP) | not started |
-| LLM client for E1 | blocked on API access |
+| Scientific-workflow corpus (`mcta.corpus.workflows`) | working, real task runtimes |
+| Exact and greedy solvers (`mcta.solve`) | working, exact checked against brute force |
+| Treewidth dynamic program (Theorem 1) | not started — optional from the outset |
+| LLM client for E1 and E4 | blocked on API access |
 
 ## First result (C1)
 
