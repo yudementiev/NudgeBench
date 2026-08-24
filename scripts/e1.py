@@ -54,10 +54,13 @@ PRICES = {
     "deepseek/deepseek-v4-flash-0731": Pricing(0.14, 0.28),
 }
 
-# Models whose supported_parameters include `temperature`. E4 measures a fraction
-# over the sampling distribution, so it can only run where sampling is controllable;
-# the GPT-5.6 family lists `seed` but not `temperature`, which rules it out for that
-# experiment while leaving it perfectly good for E1.
+# Models confirmed to give a usable sampling distribution for E4, which measures a
+# fraction over one. The GPT-5.6 family does not list `temperature` among its
+# supported parameters yet does vary between samples, so it is stochastic without
+# the width being controllable - excluded here out of caution rather than because
+# it was shown not to work. Verify with probe_capabilities before relying on any of
+# these; an earlier four-sample probe called sol deterministic purely because short
+# answers collided.
 SAMPLING_MODELS = {
     "anthropic/claude-opus-5",
     "google/gemini-3.7-flash",

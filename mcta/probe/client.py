@@ -80,6 +80,17 @@ class Call:
     completion_tokens: int
     cost: float
     latency_ms: float
+    reasoning_tokens: int = 0
+    """Thinking the model did before answering. Zero for models without the dial.
+
+    This is where reasoning effort shows up: the visible reply can be identical at
+    low and high effort while the thinking behind it doubles, so measuring the
+    answer's length says nothing about whether the dial was honoured.
+    """
+
+    estimated: bool = False
+    """True when the charge is our own arithmetic rather than the API's own figure."""
+
     tag: str = ""
     error: str = ""
 
@@ -209,7 +220,16 @@ class OpenRouter:
         reply, usage, error = self._attempt(payload)
         latency = (time.perf_counter() - started) * 1000
 
-        cost = self.pricing.charge(usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0))
+        # OpenRouter reports what the call actually cost. Prefer that over our own
+        # arithmetic, which depends on a price table that drifts; fall back to the
+        # estimate only when the field is absent.
+        reported = usage.get("cost")
+        estimated = reported is None
+        cost = (
+            self.pricing.charge(usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0))
+            if estimated
+            else float(reported) * (1 + OPENROUTER_FEE)
+        )
         self.ledger.record(self.model, cost)
         self.transcript.append(
             Call(
@@ -223,6 +243,10 @@ class OpenRouter:
                 completion_tokens=usage.get("completion_tokens", 0),
                 cost=cost,
                 latency_ms=latency,
+                reasoning_tokens=(usage.get("completion_tokens_details") or {}).get(
+                    "reasoning_tokens", 0
+                ),
+                estimated=estimated,
                 tag=self.tag,
                 error=error,
             )
@@ -289,15 +313,28 @@ def probe_capabilities(model: str, pricing: Pricing, ledger: Ledger, transcript:
     findings["varies_with_temperature"] = len(replies) > 1
     findings["temperature_samples"] = sorted(replies)
 
+    # The dial has to be probed with something worth thinking about, and measured on
+    # the thinking rather than the answer: a model asked for a single number replies
+    # with a single number at every effort, while the reasoning behind it varies.
+    puzzle = (
+        "A train leaves A at 14:00 travelling 80 km/h. Another leaves B at 14:30 "
+        "travelling 100 km/h toward A. A and B are 400 km apart. At what clock time "
+        "do they meet? Give only the time."
+    )
     for effort in ("low", "high"):
         agent = OpenRouter(model, pricing, ledger, transcript, temperature=0.0,
                            effort=effort, **kwargs)
         agent.tag = f"capability:effort:{effort}"
-        agent("What is 17 + 25? Answer with the number only.")
+        agent(puzzle)
+
     spend = [c for c in transcript.read() if c.tag.startswith("capability:effort")]
     if len(spend) >= 2:
         low, high = spend[-2], spend[-1]
-        findings["effort_changes_output_length"] = high.completion_tokens != low.completion_tokens
-        findings["effort_tokens"] = {"low": low.completion_tokens, "high": high.completion_tokens}
+        findings["effort_tokens"] = {
+            "low": {"reasoning": low.reasoning_tokens, "completion": low.completion_tokens},
+            "high": {"reasoning": high.reasoning_tokens, "completion": high.completion_tokens},
+        }
+        findings["honours_effort"] = high.reasoning_tokens != low.reasoning_tokens
+        findings["reports_reasoning_tokens"] = bool(low.reasoning_tokens or high.reasoning_tokens)
 
     return findings

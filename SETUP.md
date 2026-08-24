@@ -87,11 +87,17 @@ print(json.dumps(probe_capabilities(
 ```
 
 - **`varies_with_temperature`** must be true for any model used in **E4**, which
-  measures a fraction over the sampling distribution. The GPT-5.6 family does not
-  list `temperature` among its parameters at all, so `scripts/e4.py` refuses those
-  models before spending anything.
-- **`effort_changes_output_length`** must be true for the **reasoning-effort
-  sweep**, which is two thirds of the phase-1 budget.
+  measures a fraction over the sampling distribution. Note that a handful of
+  samples of a short answer can collide by chance and look deterministic — treat a
+  false here as "probe again with more samples", not as settled.
+- **`honours_effort`** must be true for the **reasoning-effort sweep**, which is
+  two thirds of the phase-1 budget. It is read off `reasoning_tokens`, not off the
+  visible reply: a model asked for one number answers with one number at every
+  effort while the thinking behind it varies several-fold.
+
+Measured on this account: gemini-3.7-flash moves 205 → 526 reasoning tokens from
+low to high, claude-opus-5 moves 45 → 78, and gpt-5.6-sol barely moves at 38 → 40,
+which makes it a weak candidate for the sweep.
 
 ## 6. Model ids change
 
