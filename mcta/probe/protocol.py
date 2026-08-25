@@ -158,7 +158,8 @@ def walk(
 
         move = parse_move(reply, presentation)
         if move is None:
-            episode.parse_failure = f"unparseable move at {presentation.label_of(node)}"
+            reason = "truncated" if not reply.strip() else "unparseable"
+            episode.parse_failure = f"{reason} move at {presentation.label_of(node)}"
             break
         if move == "STOP":
             episode.abandoned = True

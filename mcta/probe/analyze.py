@@ -102,6 +102,16 @@ class Cell:
         return self._rate(sum(1 for e in self.episodes if e.parse_failure))
 
     @property
+    def truncation_rate(self) -> float:
+        """Episodes where the reply ran out of tokens before reaching an answer.
+
+        Reported apart from unparseable answers because it says something about our
+        settings rather than about the agent: a model that thinks for its whole
+        output budget has not refused the format, it never got to it.
+        """
+        return self._rate(sum(1 for e in self.episodes if "truncated" in e.parse_failure))
+
+    @property
     def arithmetic_rate(self) -> float:
         """How often the agent totalled its own stated route correctly.
 
@@ -141,6 +151,7 @@ class Cell:
             f"{self.divergence_rate:>12.0%}"
             f"{self.optimal_rate:>10.0%}"
             f"{self.parse_failure_rate:>9.0%}"
+            f"{self.truncation_rate:>7.0%}"
             f"  {self.beta().describe()}"
         )
 
@@ -148,7 +159,7 @@ class Cell:
     def header() -> str:
         return (
             f"{'setting':<28}{'n':>5}{'arith':>10}{'diverged':>12}"
-            f"{'optimal':>10}{'unparsed':>9}  beta"
+            f"{'optimal':>10}{'unparsed':>9}{'trunc':>7}  beta"
         )
 
 

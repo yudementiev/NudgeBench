@@ -91,6 +91,15 @@ class Call:
     estimated: bool = False
     """True when the charge is our own arithmetic rather than the API's own figure."""
 
+    finish_reason: str = ""
+    """Why generation stopped. "length" means the reply was cut off mid-thought.
+
+    A model that spends its whole output budget reasoning and never reaches the
+    answer line looks exactly like a model that answered unparseably, and the two
+    mean opposite things: one is a harness setting to raise, the other is a fact
+    about the agent. Recording this keeps them apart.
+    """
+
     tag: str = ""
     error: str = ""
 
@@ -247,6 +256,7 @@ class OpenRouter:
                     "reasoning_tokens", 0
                 ),
                 estimated=estimated,
+                finish_reason=usage.get("_finish_reason", ""),
                 tag=self.tag,
                 error=error,
             )
@@ -273,7 +283,10 @@ class OpenRouter:
                 time.sleep(delay)
                 delay *= 2
                 continue
-            return choices[0]["message"]["content"] or "", body.get("usage", {}), ""
+            reason = choices[0].get("finish_reason") or ""
+            usage = dict(body.get("usage", {}))
+            usage["_finish_reason"] = reason
+            return choices[0]["message"]["content"] or "", usage, ""
 
         return "", {}, last
 

@@ -76,6 +76,8 @@ def main() -> int:
     parser.add_argument("--repetitions", type=int, default=2)
     parser.add_argument("--cap", type=float, default=2.0)
     parser.add_argument("--beta", type=float, default=0.75)
+    parser.add_argument("--max-tokens", type=int, default=2048,
+                        help="raise for models that spend their budget reasoning")
     args = parser.parse_args()
 
     cases = build(args.instances)
@@ -90,7 +92,8 @@ def main() -> int:
         ledger = Ledger(cap=args.cap)
         tag = args.model.replace("/", "-")
         responder = OpenRouter(args.model, PRICES[args.model], ledger,
-                               Transcript(RUNS / f"e1corpus-{tag}.jsonl"))
+                               Transcript(RUNS / f"e1corpus-{tag}.jsonl"),
+                               max_tokens=args.max_tokens)
         label = f"{args.model.split('/')[-1]} on corpus"
 
     cell = Cell(label=label)
