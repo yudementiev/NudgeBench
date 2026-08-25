@@ -1,0 +1,440 @@
+% MCTA-Bench --- draft for the NeurIPS 2026 FAST workshop.
+%
+% Compiles as-is on Overleaf with pdfLaTeX: no .bib run, no external images, no
+% style file to download. The bibliography is inline and the one figure is TikZ.
+%
+% To switch to the workshop template, download neurips_2026.sty, then replace the
+% \documentclass line and the geometry package with:
+%     \documentclass{article}
+%     \usepackage[final]{neurips_2026}     % or \usepackage{neurips_2026} while anonymous
+% and delete the \geometry{...} line below. Everything else carries over.
+
+\documentclass[10pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+
+\newcommand{\MCTA}{\textsc{Minimum-Cost Task Alignment}}
+\newcommand{\tw}{\mathrm{tw}}
+
+\title{Nudging the Graph, Not the Agent:\\
+       A Benchmark for Alignment by Environment Design}
+
+% Anonymised for double-blind review; restore for the camera-ready.
+\author{Anonymous Authors}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Agent harnesses are environments: the tools on offer, the ordering of steps and
+the presence of shortcuts determine not only what an agent \emph{can} do but what
+it \emph{will} do. Practitioners already align agents by editing these
+environments---removing a tool, forcing a checkpoint, blocking a shortcut---without
+a formal objective, a solver, or any guarantee that an edit constrains
+\emph{every} trajectory the agent might sample. The Kleinberg--Oren model of
+present-biased planning on task graphs formalises exactly this setting, and the
+accompanying \MCTA{} problem asks for the cheapest edit forcing every feasible
+trajectory to reach the goal and perform a prescribed set of critical actions.
+The theory is well developed and has never been executed. We introduce
+MCTA-Bench: 744 task graphs from real curricula and scientific workflows,
+annotated with the structural parameters that govern tractability; exact and
+heuristic solvers; and an agent-in-the-loop probe that recovers an agent's
+discount factor exactly rather than by fitting. We report three results. Real task
+graphs are structurally narrow---treewidth in single digits where prior
+measurements of network data report hundreds---yet two of seven workflow families
+remain intractable regardless, because tractability turns on weight diversity as
+much as on width. The repair an engineer would make by hand matches the optimum on
+the median real instance and costs up to $2.67\times$ more in the tail, on
+instances of treewidth two. And on fully visible graphs of up to 26 arcs we find
+\emph{no present bias in any language-model agent we tested}, from frontier models
+down to the cheapest available, with arithmetic controls passing throughout. The
+behavioural model motivating this line of theory does not, at this scale, describe
+the agents it is now being applied to.
+\end{abstract}
+
+\section{Introduction}
+
+Designing an agent's harness is already alignment work. Which tools are exposed,
+which steps are mandatory, whether a cheap shortcut sits beside the thorough
+route---these choices shape behaviour more reliably than instructions do, and
+practitioners make them constantly. They make them by intuition. There is no
+objective being minimised, no solver, and no way to check that an edit binds every
+trajectory the agent might produce rather than the one it happened to produce
+during testing.
+
+A formal account exists. Kleinberg and Oren~\cite{kleinberg2014} model an agent
+traversing a task DAG that evaluates plans under a present-biased discount: the
+next action counts in full, everything after it is discounted by $\beta$. Such an
+agent can announce a sensible plan and abandon it on arrival, with nothing about
+the environment having changed in between. The principal cannot alter $\beta$ but
+can edit the graph, and \MCTA{}~\cite{belova2024,belova2026} asks for the cheapest
+edit forcing every feasible trajectory to reach the target and traverse a
+prescribed set of critical arcs.
+
+This line has produced a detailed complexity landscape and no experiments. Nobody
+has run the algorithms, measured the environments they assume, or checked the
+behavioural premise against an actual agent. We do all three.
+
+One observation frames the exercise. An agent sampling at temperature above zero
+is precisely the nondeterministic tie-breaker the model's all-feasible-paths
+formulation is written for. Prompting shifts the \emph{mode} of an agent's
+behaviour; editing its environment is supposed to constrain the entire
+\emph{support}. That distinction is what a theory of environment design buys over
+instruction-writing, and it is testable.
+
+\section{Setting}
+
+An instance is $M = (G, w, s, t, \beta, r)$ with $G$ a weighted DAG. Standing at
+$v$, the agent evaluates every $v$--$t$ path under
+\[
+  \zeta(P) \;=\; w(e_1) + \beta \sum_{i \geq 2} w(e_i),
+\]
+abandons if $\min_P \zeta(P) > \beta r$, and otherwise commits to $e_1$ and
+repeats. Ties are broken arbitrarily, so the model induces a \emph{set} of
+feasible trajectories rather than a single path. \MCTA{} seeks $S \subseteq E$
+minimising $\sum_{e \in S} c(e)$ such that in $G - S$ every feasible trajectory
+reaches $t$ and traverses every arc of $T$. Costs are real-valued: an auxiliary
+arc given a negative deletion cost is one the solver pays to \emph{keep}, which
+lets a single objective carry both deletion and paid addition.
+
+Figure~\ref{fig:example} shows why blocking the tempting route is not generally
+enough. The agent takes the cheap shortcut; deleting it merely diverts the agent
+onto a different route that still skips the critical action; only adding an
+auxiliary arc aligns it.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  >={Stealth[length=2mm]},
+  node distance=14mm,
+  every node/.style={font=\small},
+  st/.style={circle,draw,minimum size=6mm,inner sep=0pt},
+  w/.style={font=\scriptsize,inner sep=1pt}
+]
+\node[st] (s) {$s$};
+\node[st,above right=6mm and 16mm of s] (a) {$a$};
+\node[st,right=16mm of s]              (b) {$b$};
+\node[st,below right=6mm and 16mm of s] (c) {$c$};
+\node[st,right=16mm of a] (d) {$d$};
+\node[st,right=16mm of b] (e) {$e$};
+\node[st,right=16mm of c] (f) {$f$};
+\node[st,right=16mm of e] (t) {$t$};
+
+\draw[->] (s) -- node[w,above]{10} (a);
+\draw[->] (s) -- node[w,above]{10} (b);
+\draw[->] (s) -- node[w,below]{10} (c);
+\draw[->] (a) -- node[w,above]{8}  (d);
+\draw[->] (c) -- node[w,below]{10} (f);
+\draw[->] (d) -- node[w,above]{8}  (t);
+\draw[->] (f) -- node[w,below]{10} (t);
+\draw[->] (e) -- node[w,above]{10} (t);
+
+\draw[->,very thick] (b) -- node[w,above]{10} (e);
+\draw[->,dashed] (b) -- node[w,pos=0.35,below left]{2} (f);
+\draw[->,dashed] (a) -- node[w,left]{1} (b);
+\end{tikzpicture}
+\caption{The worked example, after Belova et al.~\cite{belova2026}. With
+$\beta = 1/2$ and $r = 36$ the agent walks $sbft$, skipping the critical arc
+$(b,e)$ (thick). Deleting the shortcut $(b,f)$ (dashed) only diverts it to $sadt$,
+which also skips $(b,e)$; adding the auxiliary arc $(a,b)$ (dashed) yields
+$sabet$. Our simulator reproduces every perceived cost the paper states.}
+\label{fig:example}
+\end{figure}
+
+\section{MCTA-Bench}
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lrll}
+\toprule
+Corpus & Instances & Source & Weights \\
+\midrule
+Caltech curricula        & 169 & Stavrinides \& Zuev~\cite{stavrinides2023} & synthetic \\
+Johns Hopkins curricula  & 533 & same repository, extracted from prose      & synthetic \\
+Scientific workflows     &  42 & WfCommons~\cite{wfcommons}                 & \textbf{measured runtimes} \\
+\bottomrule
+\end{tabular}
+\caption{The corpus. Course networks are exact but carry no workload column;
+workflow traces record how long each task actually took.}
+\label{tab:corpus}
+\end{table}
+
+Two mapping decisions are stated rather than buried. Prerequisite graphs are
+conjunctive while agent paths are sequential, so an instance answers ``how hard is
+this shape to align'', not ``what should this student enrol in''. And the Johns
+Hopkins extraction reads catalogue disjunctions as conjunctions, which only
+\emph{adds} arcs---the safe direction, since treewidth never falls when arcs are
+added, so those figures bound the real curriculum from above.
+
+\section{Environments are narrow, and that is not enough}
+\label{sec:c1}
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lccc}
+\toprule
+Graph & Treewidth & $p$ & $|L|$ \\
+\midrule
+Caltech, largest component (436 nodes, 747 arcs) & 8--12 & --- & --- \\
+Caltech, 169 instances            & median 3, max 5  & max 7  & max 8 \\
+Johns Hopkins, largest component (665, 1708) & $\leq 25$ & --- & --- \\
+Johns Hopkins, 533 instances      & median 3, max 11 & max 12 & max 13 \\
+\midrule
+seismology, 601 tasks             & \textbf{2}     & 3  & 415 \\
+epigenomics, 233 tasks            & \textbf{2}     & 10 & 286 \\
+soykb, 336 tasks                  & \textbf{12}    & 12 & 6\,610 \\
+montage, 472 tasks                & \textbf{17--18} & 9  & 34\,986 \\
+\bottomrule
+\end{tabular}
+\caption{Structural parameters. Every NP-hard quantity is reported as a certified
+interval rather than a point estimate.}
+\label{tab:structure}
+\end{table}
+
+The motivating claim survives: task graphs are narrow, against the hundreds Maniu
+et al.~\cite{maniu2019} report for database and road networks. The contrast is
+worth drawing precisely because their corpus is network data rather than task
+graphs, so structural narrowness appears to be a property of the latter
+specifically.
+
+The second half is the interesting one. The dynamic program of~\cite{belova2026}
+runs in $(|L|+1)^{O(\tw)}$ time, where $L$ collects the distinct weights of paths
+to the target, so width alone does not decide feasibility. Montage reaches
+$10^{81}$ states and its treewidth \emph{grows with problem size}, from 5 at 58
+tasks to 18 at 472; soykb reaches $10^{46}$. Five of seven workflow families are
+trivially tractable and two are hopeless. \textbf{A graph can be narrow and still
+out of reach.} This argues for the theorem's form rather than against it, and
+gives the open question of whether an $f(\tw) \cdot m^{g(p)}$ algorithm
+exists~\cite{belova2026} a concrete constituency: montage has $p = 9$ at every
+size, so such an algorithm would rescue exactly the family the current one cannot.
+
+One practical lever falls out. Rounding runtimes to whole seconds collapses $|L|$
+from $34\,986$ to $385$ in montage and barely moves srasearch. The principal's
+unit of account is a design parameter of the intervention, not an implementation
+detail.
+
+\section{The intuitive repair is usually right and occasionally expensive}
+\label{sec:c2}
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+Corpus & Solved & Optimality proved & Heuristic worse & Worst ratio \\
+\midrule
+Caltech                       & 65 & 65 & 10 & $\mathbf{2.00\times}$ \\
+Johns Hopkins ($\leq 28$ arcs) & 87 & 74 &  2 & $\mathbf{2.67\times}$ \\
+\bottomrule
+\end{tabular}
+\caption{Witness-guided heuristic against the exact optimum on real instances.}
+\label{tab:solvers}
+\end{table}
+
+The heuristic is the engineer's move rendered as an algorithm: watch the agent
+take a route it should not, block one step of it, repeat. Its median cost ratio
+against the exact optimum is $1.00$---usually the local fix is simply correct. The
+tail is where it is not, and the instances where it loses have \textbf{treewidth
+2--3}. Being narrow does not make the greedy choice right. Exact solving takes
+milliseconds on the median instance and seconds in the tail; the search budget
+runs out between 20 and 28 arcs, which is where hardness begins to bite in
+practice.
+
+\section{Agents}
+\label{sec:c3}
+
+\subsection{Probe}
+
+Each episode puts one agent through two conditions on one instance: state a
+complete route from the source, then walk it one committed action at a time. The
+agent sees the whole graph in both---present bias is discounting the future, not
+being blind to it, so hiding the future would measure something else entirely.
+
+$\beta$ is recovered exactly rather than fitted. Choosing $e^\ast$ over $e$
+requires $w(e^\ast) + \beta\, d(\mathrm{head}(e^\ast)) \leq w(e) + \beta\,
+d(\mathrm{head}(e))$, a linear inequality in $\beta$; a trajectory therefore pins
+$\beta$ to an interval, and the episodes of a run intersect to a tighter one. An
+empty intersection is itself a finding---that no single-parameter discount
+explains the agent---and is reported as such rather than averaged away.
+
+Two controls carry the interpretation. The agent totals its own stated route, so a
+model that cannot add is never mistaken for one that discounts. And replies that
+exhausted their output budget are counted apart from replies that ignored the
+format.
+
+\subsection{No present bias, at any capability}
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lrrrl}
+\toprule
+Model & Episodes & Arithmetic & Optimal route & $\beta$ \\
+\midrule
+\texttt{claude-opus-5}      & 40 & 100\% &  98\% & $\mathbf{[1.000,\,1]}$ \\
+\texttt{gemini-3.7-flash}   & 40 & 100\% & 100\% & $\mathbf{[0.846,\,1]}$ \\
+\texttt{deepseek-v4-flash}  &  8 & 100\% &  88\% & $\mathbf{[1.000,\,1]}$ \\
+\bottomrule
+\end{tabular}
+\caption{Real prerequisite closures of 8--26 arcs, presented in full. The
+arithmetic control passes everywhere, so this is patience rather than incapacity.}
+\label{tab:agents}
+\end{table}
+
+Synthetic traps agree. Calibrating instances to the human effort-discounting band
+$\beta \in [0.70, 0.79]$~\cite{augenblick,cheung} proved useless: every agent sat
+above it, and traps had to be rebuilt up to $\beta = 0.99$ before they bracketed
+anything. On the strongest of those---one hour of work now against 118 later,
+versus 59 and 59---\texttt{gemini-3.7-flash} took the steady route in 100 of 100
+episodes.
+
+\textbf{No agent we tested shows present bias on these instances.} The hypothesis
+that myopia is a function of reasoning budget gains no support either: the
+cheapest model available is as patient as the frontier.
+
+The scope is deliberately narrow. On fully visible graphs of up to 26 arcs, the
+Kleinberg--Oren model does not describe language-model route choice at any
+capability level we could buy. What this does not establish is behaviour under
+partial observability, longer horizons, or genuine execution cost---the regimes
+where a bounded planning horizon has room to bite, and where the model has its
+best chance.
+
+\subsection{Do theory-derived edits steer an agent?}
+
+Twelve instances the agent walks past a required action, three conditions
+(unedited, hand-made repair, cheapest repair), 20 rollouts each at temperature
+$1$. On the selected cases the hand-made repair costs 29 against the optimum's 20.
+Against a textbook present-biased agent both repairs align by construction and
+differ only in price, so any gap in \emph{effectiveness} measures the real agent
+departing from the model.
+
+\emph{[Results pending; success rate per condition with Wilson intervals.]}
+
+\section{What measuring agents cost us}
+
+Three times a defect in our own harness presented as a property of the agent, each
+time plausibly (Table~\ref{tab:defects}). Each would have entered a paper as a
+finding. The first is the worst: those episodes were dropped \emph{selectively},
+since whatever a model chooses to emphasise is not a random slice, so the discount
+factor it produced had been fitted to a biased subsample.
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lll}
+\toprule
+Symptom & Read as & Actually \\
+\midrule
+25\% unparseable replies & will not follow the format & parser could not read \verb|**MOVE: A5**| \\
+transcript replay missing & the log is useless        & node order came from set iteration \\
+empty replies, weak model & could not solve it        & our output budget, exhausted mid-thought \\
+\bottomrule
+\end{tabular}
+\caption{Harness defects that looked like agent behaviour.}
+\label{tab:defects}
+\end{table}
+
+We therefore report the arithmetic control, the truncation column and the full
+call transcript as part of the method rather than as engineering detail. One limit
+of the transcript is worth recording: replay saves the cost of a rerun only while
+the interpretation is unchanged. Fixing the parser changed which move was read,
+which changed where the walk went, which required step prompts that were never
+issued---so the stored replies no longer covered the interaction and both runs had
+to be repeated.
+
+\section{Limitations}
+
+Weights in the curriculum corpora are synthetic, since the published data has no
+workload column. The conjunctive-to-sequential mapping is a modelling choice. The
+Johns Hopkins figures bound its structure from above rather than measuring it. The
+exact solver is branch and bound, not the treewidth dynamic program, so the
+theory's main algorithm remains unexecuted. Agent results cover three models, one
+protocol and two framings, with the weakest model at only 8 episodes; and the
+graphs are small and fully visible, which is precisely the regime where a
+bounded-horizon effect has least room to appear.
+
+\section{Conclusion}
+
+Environment design is an alignment primitive with a measurable objective, a
+solver, and now a corpus. Two findings are ready to use: real task graphs are
+narrow but not therefore tractable, and the intuitive repair is optimal on the
+median instance and materially worse in a tail that structural narrowness does not
+predict. The third is a negative result about the premise---the behavioural model
+motivating this theory does not describe the agents it is now aimed at, at the
+scale we could test. That does not retire the theory; it locates where the
+question actually lives, which is at horizons long enough, or environments partial
+enough, that lookahead has a cost.
+
+Corpora, solvers, probe and every API call made are released.
+
+\begin{thebibliography}{99}
+
+\bibitem{augenblick}
+N.~Augenblick et al.
+\newblock Estimating present bias and sophistication over effort and money.
+\newblock \emph{Experimental Economics}.
+
+\bibitem{belova2024}
+T.~Belova, Y.~Dementiev, F.~V. Fomin, P.~A. Golovach, and A.~Ignatiev.
+\newblock How to guide a present-biased agent through prescribed tasks?
+\newblock In \emph{ECAI}, pages 3461--3468, 2024.
+
+\bibitem{belova2026}
+T.~Belova, Y.~Dementiev, F.~V. Fomin, P.~A. Golovach, A.~Ignatiev, and D.~Sagunov.
+\newblock Structural alignment in inconsistent planning.
+\newblock Extending \emph{AAAI} 40(20):16664--16672, 2026.
+
+\bibitem{bharathi}
+S.~Bharathi et al.
+\newblock Characterization of scientific workflows.
+
+\bibitem{cheung}
+S.~L. Cheung, A.~Tymula, and X.~Wang.
+\newblock A meta-analysis of quasi-hyperbolic discounting.
+
+\bibitem{enke}
+B.~Enke.
+\newblock Complexity and hyperbolic discounting.
+\newblock Harvard Business School Working Paper 24-048.
+
+\bibitem{kleinberg2014}
+J.~M. Kleinberg and S.~Oren.
+\newblock Time-inconsistent planning: a computational problem in behavioral
+economics.
+\newblock In \emph{ACM Conference on Economics and Computation}, pages 547--564,
+2014.
+
+\bibitem{maniu2019}
+S.~Maniu, P.~Senellart, and S.~Jog.
+\newblock An experimental study of the treewidth of real-world graph data.
+\newblock In \emph{ICDT}, pages 12:1--12:18, 2019.
+
+\bibitem{stavrinides2023}
+P.~Stavrinides and K.~Zuev.
+\newblock Course-prerequisite networks for analyzing and understanding academic
+curricula.
+\newblock \emph{Applied Network Science}, 8, 2023.
+
+\bibitem{wfcommons}
+T.~Coleman et al.
+\newblock WfCommons: a framework for enabling scientific workflow research and
+development.
+\newblock \emph{Future Generation Computer Systems}, 2022.
+
+\bibitem{yang2024}
+B.~Yang et al.
+\newblock Comparative analysis of course prerequisite networks for five
+Midwestern public institutions.
+\newblock \emph{Applied Network Science}, 9, 2024.
+
+\end{thebibliography}
+
+\end{document}
