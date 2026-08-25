@@ -103,7 +103,7 @@ def build_cases(limit: int) -> list[Case]:
     # price, so any gap in *effectiveness* can only come from the real agent
     # departing from the model - which is what this experiment is here to find.
     cases = [c for c in cases if c is not None]
-    cases.sort(key=lambda c: (c.greedy == c.optimal, -(c.greedy_cost - c.optimal_cost)))
+    cases.sort(key=lambda c: (c.greedy == c.optimal, -(c.greedy_cost - c.optimal_cost), c.name))
     return cases[:limit]
 
 

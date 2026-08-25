@@ -272,7 +272,11 @@ def solve_exact(
     it, so the bound subtracts those. Reports `proved_optimal` only when the search
     actually finished; otherwise the answer is the best found within budget.
     """
-    candidates = sorted(candidate_arcs(instance, critical), key=cost)
+    # Break ties on the arc itself, not on set iteration order: candidate_arcs
+    # returns a set, whose order for string tuples varies between processes, and
+    # an unstable search order changes which optimum is reported and how many
+    # oracle calls it took.
+    candidates = sorted(candidate_arcs(instance, critical), key=lambda a: (cost(a), a))
     already = is_aligned(instance, critical)
 
     # Doing nothing is optimal only when nothing pays you to act. Under the

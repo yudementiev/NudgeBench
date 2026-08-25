@@ -184,18 +184,23 @@ def test_greedy_pays_double_on_a_known_instance():
 
 
 def test_greedy_never_beats_the_optimum_and_sometimes_loses():
-    """Across a sweep: feasible always, optimal not always."""
+    """Across a sweep: feasible always, optimal not always.
+
+    Arcs are taken in sorted order rather than set order. An earlier version
+    iterated the feasible set directly and passed or failed depending on the
+    process's string hashing - which is worse than a flaky test, because it was
+    green for a reason unrelated to the property being asserted.
+    """
     gaps = []
     for seed in range(12):
-        rng = random.Random(seed)
-        instance = layered_dag(3, 3, rng).instance
-        behavior = analyze(instance)
-        for critical_arc in list(behavior.feasible)[:3]:
-            critical = {critical_arc}
-            exact = solve_exact(instance, critical)
-            greedy = greedy_witness_guided(instance, critical)
+        instance = layered_dag(3, 3, random.Random(seed)).instance
+        for critical_arc in sorted(analyze(instance).feasible):
+            exact = solve_exact(instance, {critical_arc})
+            greedy = greedy_witness_guided(instance, {critical_arc})
             if exact.aligned and greedy.aligned:
                 gaps.append(greedy.cost - exact.cost)
+        if any(gap > 0 for gap in gaps) and any(abs(gap) < 1e-9 for gap in gaps):
+            break
 
     assert gaps, "no solvable instances were generated"
     assert all(gap >= -1e-9 for gap in gaps), "the heuristic beat the exact optimum"
