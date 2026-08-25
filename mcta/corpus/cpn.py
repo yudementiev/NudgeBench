@@ -211,14 +211,18 @@ def to_instance(
     induced = cpn.subgraph(closure)
     charge = weight_of or (lambda course: 1.0)
 
+    # Sort before building. `nx.ancestors` returns a set, and set iteration order
+    # for strings varies between processes under hash randomisation, so an unsorted
+    # closure yields the same graph with a different node order every run - which
+    # silently changes the randomised labels and breaks transcript replay.
     graph = nx.MultiDiGraph()
     graph.add_node("START")
-    for course in induced:
+    for course in sorted(induced):
         graph.add_node(course)
-    for tail, head in induced.edges():
+    for tail, head in sorted(induced.edges()):
         graph.add_edge(tail, head, key=0, weight=charge(head))
 
-    entries = [c for c in induced if induced.in_degree(c) == 0]
+    entries = sorted(c for c in induced if induced.in_degree(c) == 0)
     for entry in entries:
         graph.add_edge("START", entry, key=0, weight=charge(entry))
 

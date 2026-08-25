@@ -132,3 +132,19 @@ def test_real_curricula_are_structurally_narrow(cpn):
 
     assert max(widths) <= 8, f"widest closure measured at treewidth {max(widths)}"
     assert max(depths) <= 12, f"longest curriculum route runs {max(depths)} courses"
+
+
+def test_instance_node_order_survives_hash_randomisation(cpn):
+    """Prompts must regenerate identically, or transcript replay silently misses.
+
+    `nx.ancestors` returns a set, and set iteration order for strings differs
+    between processes under hash randomisation. An unsorted closure therefore
+    yields the same graph with a different node order each run, which reshuffles
+    the randomised labels and makes every stored prompt unmatchable.
+    """
+    target = candidate_targets(cpn, min_courses=6, min_depth=3)[0]
+
+    first = list(to_instance(cpn, target).graph.nodes())
+    second = list(to_instance(cpn, target).graph.nodes())
+
+    assert first == second == sorted(first, key=lambda n: (n != "START", n))
