@@ -111,8 +111,11 @@ def _critical_arcs_lie_on_some_path(instance: Instance, critical: set[Arc]) -> b
     if any(arc[0] not in reach[instance.source] for arc in critical):
         return False
 
-    # Order the critical arcs by reachability and check they chain up.
-    ordered = sorted(critical, key=lambda arc: len(reach[arc[1]]), reverse=True)
+    # Order the critical arcs by reachability and check they chain up. The arc
+    # itself completes the key: `critical` is a set, and sorting it on reachability
+    # alone leaves equally-reachable arcs in set order, which differs between
+    # processes and would make the verdict depend on how Python hashed the strings.
+    ordered = sorted(critical, key=lambda arc: (-len(reach[arc[1]]), arc))
     for earlier, later in zip(ordered, ordered[1:]):
         if later[0] not in reach[earlier[1]]:
             return False

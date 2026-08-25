@@ -111,7 +111,9 @@ def _forced_route(instance: Instance, critical: set[Arc]) -> frozenset[Arc] | No
     starting incumbent for search.
     """
     graph = instance.graph
-    ordered = sorted(critical, key=lambda arc: _depth(graph, instance.source, arc[0]))
+    # Arc breaks depth ties: `critical` is a set, so an incomplete key would let
+    # the route depend on set iteration order.
+    ordered = sorted(critical, key=lambda arc: (_depth(graph, instance.source, arc[0]), arc))
 
     route: list[Arc] = []
     node = instance.source
@@ -153,7 +155,7 @@ def _shortest_leg(instance: Instance, start: str, end: str) -> list[Arc] | None:
     legs: list[Arc] = []
     for tail, head in zip(nodes, nodes[1:]):
         parallel = instance.graph.get_edge_data(tail, head)
-        key = min(parallel, key=lambda k: parallel[k]["weight"])
+        key = min(parallel, key=lambda k: (parallel[k]["weight"], k))
         legs.append((tail, head, key))
     return legs
 
@@ -221,7 +223,9 @@ def minimalize(
     keep = set(deleted)
     calls = 0
 
-    for arc in sorted(keep, key=cost, reverse=True):
+    # Dearest first, arc breaking ties - `keep` is a set, and which redundant
+    # deletion gets dropped should not depend on how it was hashed.
+    for arc in sorted(keep, key=lambda a: (-cost(a), a)):
         trial = keep - {arc}
         candidate = instance.without(trial)
         calls += 1

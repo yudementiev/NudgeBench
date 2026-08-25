@@ -18,6 +18,7 @@ from mcta.generate import costly_compliance, layered_dag
 from mcta.model import Arc, Instance, analyze
 from mcta.solve import (
     Intervention,
+    _forced_route,
     candidate_arcs,
     greedy_witness_guided,
     is_aligned,
@@ -253,3 +254,27 @@ def test_unreachable_arcs_are_not_worth_paying_to_remove():
     marooned = stranded.with_arcs({("e", "dead", 0): 1.0})
     assert ("e", "dead", 0) not in candidate_arcs(marooned, set(FIGURE_ONE_CRITICAL))
     assert candidates
+
+
+def test_tie_breaking_is_total_everywhere_it_sorts_a_set():
+    """Sorting a set on an incomplete key leaves ties in hash order.
+
+    None of today's inputs happen to expose it, which is exactly why it is worth
+    closing: the defect is in the ordering, not in the data that reaches it. Here
+    several deletions share a cost, so the key must be what decides, not the set.
+    """
+    instance = layered_dag(3, 3, random.Random(0)).instance
+    critical = {sorted(analyze(instance).feasible)[0]}
+
+    # Start from the forced route: everything off one threading is deleted, so the
+    # set is aligned by construction and large enough for ties to matter. Deleting
+    # *every* candidate instead would strand the agent, and minimalize cannot climb
+    # back out of that - alignment is not monotone in the deleted set.
+    forced = _forced_route(instance, critical)
+    assert forced is not None and len(forced) > 2
+
+    first = minimalize(instance, critical, forced)
+    second = minimalize(instance, critical, sorted(forced, reverse=True))
+
+    assert first.deleted == second.deleted, "the answer must not depend on input order"
+    assert first.aligned and second.aligned
