@@ -22,7 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from mcta.generate import BETA_BANDS, integer_sweep  # noqa: E402
+from mcta.generate import BETA_BANDS, deep_sweep, integer_sweep  # noqa: E402
 from mcta.probe import (  # noqa: E402
     FRAMINGS,
     Ledger,
@@ -72,11 +72,14 @@ SAMPLING_MODELS = {
 }
 
 
-def conditions(thresholds: int, repetitions: int, framings: tuple[str, ...]):
+def conditions(thresholds: int, repetitions: int, framings: tuple[str, ...],
+               band: str = "effort", depth: int = 1):
     """Every (trap, framing, repetition) the sweep calls for."""
     # Whole-number weights: the arithmetic control must not be confounded by
-    # asking a model to total awkward decimals.
-    traps = integer_sweep("effort", count=thresholds)
+    # asking a model to total awkward decimals. Depth beyond 1 makes evaluating
+    # the future cost something, which is where a bounded horizon would show.
+    traps = (integer_sweep(band, count=thresholds) if depth <= 1
+             else deep_sweep(band, count=thresholds, depth=depth))
     for trap in traps:
         for framing in framings:
             for repetition in range(repetitions):
@@ -84,10 +87,11 @@ def conditions(thresholds: int, repetitions: int, framings: tuple[str, ...]):
 
 
 def run_cell(label: str, responder, thresholds: int, repetitions: int,
-             framings: tuple[str, ...], seed: int = 0) -> Cell:
+             framings: tuple[str, ...], seed: int = 0, band: str = "effort",
+             depth: int = 1) -> Cell:
     cell = Cell(label=label)
     for index, (trap, framing, repetition) in enumerate(
-        conditions(thresholds, repetitions, framings)
+        conditions(thresholds, repetitions, framings, band, depth)
     ):
         instance = trap.instance
         # A fresh presentation per episode: labels and option order are re-randomised
@@ -111,7 +115,7 @@ def dry_run(args) -> int:
     for beta in (0.60, 0.7375, 0.95):
         cell = run_cell(
             f"reference beta={beta}", ReferenceAgent(beta),
-            args.thresholds, args.repetitions, tuple(args.framings),
+            args.thresholds, args.repetitions, tuple(args.framings), band=args.band, depth=args.depth,
         )
         print(cell.row())
         interval = cell.beta()
@@ -122,8 +126,7 @@ def dry_run(args) -> int:
             print(f"    FAILED: recovered interval excludes the driving beta {beta}")
             ok = False
 
-    band = BETA_BANDS["effort"]
-    print(f"\nTraps calibrated across the effort band {band}.")
+    print(f"\nTraps calibrated across the {args.band} band {BETA_BANDS[args.band]}.")
     print("Pipeline recovers the beta it was driven with." if ok else "\nPIPELINE BROKEN.")
     return 0 if ok else 1
 
@@ -134,7 +137,8 @@ def live_run(args) -> int:
         return 2
 
     RUNS.mkdir(exist_ok=True)
-    transcript = Transcript(RUNS / f"e1-{args.model.replace('/', '-')}.jsonl")
+    tag = f"{args.model.replace('/', '-')}-{args.band}-d{args.depth}"
+    transcript = Transcript(RUNS / f'e1-{tag}.jsonl')
     ledger = Ledger(cap=args.cap)
 
     print(f"Model {args.model}, cap ${args.cap:.2f}, transcript {transcript.path.name}\n")
@@ -148,7 +152,7 @@ def live_run(args) -> int:
         )
         cell = run_cell(
             f"{args.model.split('/')[-1]} effort={effort}", responder,
-            args.thresholds, args.repetitions, tuple(args.framings),
+            args.thresholds, args.repetitions, tuple(args.framings), band=args.band, depth=args.depth,
         )
         print(cell.row())
         interval = cell.beta()
@@ -164,7 +168,7 @@ def live_run(args) -> int:
             "parse_failure_rate": cell.parse_failure_rate,
         }
 
-    out = RUNS / f"e1-{args.model.replace('/', '-')}.json"
+    out = RUNS / f'e1-{tag}.json'
     out.write_text(json.dumps(results, indent=2))
     print(f"\n{ledger.summary()}")
     print(f"Results in {out}")
@@ -187,6 +191,10 @@ def main() -> int:
     parser.add_argument("--model", default="google/gemini-3.7-flash")
     parser.add_argument("--effort", default="none",
                         help="comma separated: none,low,medium,high")
+    parser.add_argument("--depth", type=int, default=1,
+                        help="arcs per route; >1 makes lookahead expensive")
+    parser.add_argument("--band", default="effort",
+                        help="effort | non_monetary | money | agentic | wide")
     parser.add_argument("--thresholds", type=int, default=5)
     parser.add_argument("--repetitions", type=int, default=10)
     parser.add_argument("--framings", default=",".join(FRAMINGS))

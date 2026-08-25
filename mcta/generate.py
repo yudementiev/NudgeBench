@@ -47,6 +47,10 @@ BETA_BANDS = {
     "money": (0.905, 0.972),
     "non_monetary": (0.643, 0.857),
     "effort": (0.70, 0.79),
+    # Not an empirical band. LLM agents turn out to sit above every human one, so
+    # localising them needs traps stronger than any human experiment calls for.
+    "agentic": (0.80, 0.99),
+    "wide": (0.50, 0.99),
 }
 BETA_POINT = {"money": 0.938, "non_monetary": 0.750, "effort": 0.745}
 
@@ -271,7 +275,8 @@ def integer_trap(immediate: int, steady: int, tail: int, *, beta: float = 0.75,
     )
 
 
-def integer_sweep(band: str = "effort", count: int = 5, *, limit: int = 40,
+def integer_sweep(band: str | tuple[float, float] = "effort", count: int = 5, *,
+                  limit: int = 60,
                   **kwargs) -> list[Generated]:
     """Whole-number traps whose thresholds spread across an attested band.
 
@@ -279,7 +284,7 @@ def integer_sweep(band: str = "effort", count: int = 5, *, limit: int = 40,
     and picks the `count` that are most evenly spaced - so the sweep brackets an
     agent as tightly as the calibrated version while only ever showing it integers.
     """
-    low, high = BETA_BANDS[band]
+    low, high = BETA_BANDS[band] if isinstance(band, str) else band
     found: dict[float, tuple[int, int, int]] = {}
     for immediate in range(1, limit // 3):
         for steady in range(immediate + 1, limit):
@@ -461,3 +466,82 @@ def series_parallel(
             notes=f"nesting depth {depth}, |W|={len(weights.palette)}",
         ),
     )
+
+
+def deep_trap(threshold: float, depth: int = 6, *, immediate: int = 1, unit: int = 6,
+              beta: float = 0.75, reward: float | None = None) -> Generated:
+    """The same choice as `integer_trap`, but with lookahead that costs something.
+
+    A four-arc trap asks the agent to compare two sums of two numbers, which any
+    capable model does correctly - so it measures planning ability, not planning
+    horizon, and a patient answer there says nothing about whether the agent would
+    stay patient when the future is genuinely expensive to evaluate.
+
+    Here each route is a chain of `depth` arcs. The structure is unchanged: the
+    tempting route is cheap on its first step and dear afterwards, the steady route
+    is even, and the flip still sits at
+
+        (unit - immediate) / (tempting_tail - steady_tail).
+
+    What changes is that working the comparison out means summing `depth` numbers
+    per branch rather than one, which is where a bounded horizon would show up.
+    """
+    if depth < 2:
+        raise ValueError("a deep trap needs at least two arcs a side")
+
+    steady_tail = (depth - 1) * unit
+    tempting_tail = round(steady_tail + (unit - immediate) / threshold)
+    if tempting_tail <= steady_tail:
+        raise ValueError("threshold too high for these weights")
+
+    graph = nx.MultiDiGraph()
+    # Spread the tempting tail as evenly as whole numbers allow, remainder last, so
+    # no single arc advertises itself as the expensive one.
+    share, extra = divmod(tempting_tail, depth - 1)
+    previous = "s"
+    for step in range(depth):
+        node = "t" if step == depth - 1 else f"tempting{step}"
+        if step == 0:
+            weight = immediate
+        else:
+            weight = share + (extra if step == depth - 1 else 0)
+        graph.add_edge(previous, node, key=0, weight=float(weight))
+        previous = node
+
+    previous = "s"
+    for step in range(depth):
+        node = "t" if step == depth - 1 else f"steady{step}"
+        graph.add_edge(previous, node, key=0, weight=float(unit))
+        previous = node
+
+    instance = Instance(graph, "s", "t", beta,
+                        reward if reward is not None else 4.0 * (immediate + tempting_tail))
+    return Generated(
+        instance=instance,
+        spec=Spec(
+            family="deep_trap",
+            threshold=(unit - immediate) / (tempting_tail - steady_tail),
+            costs_effort=True,
+            notes=f"depth {depth}; tempting {immediate}+{tempting_tail}, steady {depth * unit}",
+        ),
+    )
+
+
+def deep_sweep(band: str | tuple[float, float] = "agentic", count: int = 5,
+               depth: int = 6, *, immediate: int = 1, **kwargs) -> list[Generated]:
+    """Deep traps whose realised thresholds spread across a band.
+
+    The unit is scaled up until rounding stops collapsing neighbouring thresholds
+    onto each other: with small weights the gap between the thresholds we want is
+    finer than one whole number, and every trap in the sweep comes out identical.
+    """
+    low, high = BETA_BANDS[band] if isinstance(band, str) else band
+    step = (high - low) / (count + 1)
+    wanted = [low + step * (i + 1) for i in range(count)]
+
+    for unit in range(6, 200):
+        traps = [deep_trap(w, depth, immediate=immediate, unit=unit, **kwargs) for w in wanted]
+        realised = [t.spec.threshold for t in traps]
+        if len(set(round(r, 6) for r in realised)) == count and all(r < 1 for r in realised):
+            return traps
+    raise ValueError(f"no unit gives {count} distinct thresholds in {band} at depth {depth}")
