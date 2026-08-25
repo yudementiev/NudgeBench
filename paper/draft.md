@@ -1,7 +1,7 @@
 # Nudging the Graph, Not the Agent: A Benchmark for Alignment by Environment Design
 
-*Draft for NeurIPS 2026 FAST. Numbers marked ✅ are reproducible today from the
-named script. Section 6 waits on the E4 run in flight.*
+*Draft for NeurIPS 2026 FAST. Every number is reproducible today from the named
+script.*
 
 ---
 
@@ -23,15 +23,18 @@ govern tractability; exact and heuristic solvers; and an agent-in-the-loop probe
 that estimates an agent's discount factor exactly rather than by fitting. We
 report three results. Real task graphs are structurally narrow — treewidth in
 single digits where prior measurements of network data report hundreds — yet a
-third of our workflow families remain intractable anyway, because tractability
-depends on weight diversity as much as on width. The repair an engineer would make
+two of seven workflow families remain intractable regardless, because tractability
+turns on weight diversity as much as on width. The repair an engineer would make
 by hand matches the optimum on the median real instance and costs up to 2.67× more
 in the tail, on instances of treewidth two. And on graphs of up to 26 arcs
 presented in full, we find **no present bias in any language-model agent we
 tested**, from frontier models down to the cheapest available: the discount factor
 is pinned at or near 1 in every case, with arithmetic controls passing throughout.
 The behavioural model that motivates this line of theory does not, at this scale,
-describe the agents it is now being applied to.
+describe the agents it is now being applied to. The intervention machinery,
+however, transfers intact: theory-derived edits move compliance from 0% to 100%
+across the whole sampling distribution, and do so even though they were computed
+for a discount factor the agent does not have.
 
 ---
 
@@ -146,7 +149,7 @@ milliseconds on the median instance and seconds in the tail; the search budget
 runs out between 20 and 28 arcs, which is where hardness begins to bite in
 practice.
 
-## 6. Agents ✅ (E1) / ⬜ (E4)
+## 6. Agents ✅
 
 ### 6.1 Probe
 
@@ -191,7 +194,7 @@ partial observability, longer horizons, or genuine execution cost — where a
 bounded planning horizon has room to bite and where, we would expect, the model
 has its best chance.
 
-### 6.3 Do theory-derived edits steer an agent? ⬜
+### 6.3 Do theory-derived edits steer an agent? ✅
 
 Twelve instances the agent walks past a required action, three conditions
 (unedited, hand-made repair, cheapest repair), 20 rollouts each at temperature 1.
@@ -200,7 +203,26 @@ Against a textbook present-biased agent both repairs align by construction and
 differ only in price, so any gap in *effectiveness* measures the real agent
 departing from the model.
 
-- ⬜ success rate per condition, with Wilson intervals
+| Condition | traversed T | rate | 95% CI |
+|---|---|---|---|
+| unedited | 0/240 | **0%** | [0%, 2%] |
+| hand-made repair | 240/240 | **100%** | [98%, 100%] |
+| cheapest repair | 240/240 | **100%** | [98%, 100%] |
+
+**The intervention works completely** — 0% to 100% across the whole sampling
+distribution, unanimous over 12 instances × 20 rollouts. That is the property
+distinguishing environment design from prompting: not a shifted mode, a
+constrained support.
+
+**It is robust to getting β wrong.** The edits were computed for β = 0.75 and
+applied to an agent our probe measures at β ≈ 1. They steered it perfectly anyway,
+so a principal need not know the discount factor to design an effective edit —
+which matters, since §6.2 suggests it may not exist.
+
+**The optimum buys cost, not robustness.** The repairs differ on 9 of 12 instances
+and the hand-made one costs 45% more (29 against 20), yet both succeed on every
+rollout. The hypothesis that the cheaper repair might be more fragile finds no
+support. The theory delivers the same guarantee for less, not a stronger one.
 
 ## 7. What measuring agents cost us
 

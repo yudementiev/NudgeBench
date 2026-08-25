@@ -60,7 +60,10 @@ instances of treewidth two. And on fully visible graphs of up to 26 arcs we find
 \emph{no present bias in any language-model agent we tested}, from frontier models
 down to the cheapest available, with arithmetic controls passing throughout. The
 behavioural model motivating this line of theory does not, at this scale, describe
-the agents it is now being applied to.
+the agents it is now being applied to. The intervention machinery, however,
+transfers intact: theory-derived edits move compliance from $0\%$ to $100\%$ across
+the whole sampling distribution, and do so even though they were computed for a
+discount factor the agent does not have.
 \end{abstract}
 
 \section{Introduction}
@@ -310,14 +313,46 @@ best chance.
 
 \subsection{Do theory-derived edits steer an agent?}
 
-Twelve instances the agent walks past a required action, three conditions
-(unedited, hand-made repair, cheapest repair), 20 rollouts each at temperature
-$1$. On the selected cases the hand-made repair costs 29 against the optimum's 20.
-Against a textbook present-biased agent both repairs align by construction and
-differ only in price, so any gap in \emph{effectiveness} measures the real agent
-departing from the model.
+Twelve real instances on which the agent walks past a required action, three
+conditions---unedited, the hand-made repair, the cheapest repair---and 20 rollouts
+each at temperature $1$. The measurement is a \emph{fraction of rollouts}, because
+the claim being tested is about the whole sampling distribution rather than one
+trajectory.
 
-\emph{[Results pending; success rate per condition with Wilson intervals.]}
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrl}
+\toprule
+Condition & Traversed $T$ & Rate & 95\% CI (Wilson) \\
+\midrule
+Unedited                 & 0/240   &   0\% & [0\%, 2\%] \\
+Hand-made repair         & 240/240 & 100\% & [98\%, 100\%] \\
+Cheapest repair          & 240/240 & 100\% & [98\%, 100\%] \\
+\bottomrule
+\end{tabular}
+\caption{Editing the environment moves compliance from never to always, on every
+one of the twelve instances and every rollout.}
+\label{tab:e4}
+\end{table}
+
+Three things follow, and the second is the one we did not expect.
+
+\textbf{The intervention works completely.} Compliance goes from $0\%$ to $100\%$
+across the entire sampling distribution---unanimous over 12 instances $\times$ 20
+rollouts. This is the property that distinguishes environment design from
+prompting: not a shifted mode, but a constrained support.
+
+\textbf{It is robust to getting $\beta$ wrong.} The edits were computed for a
+present-biased agent at $\beta = 0.75$ and applied to an agent our own probe
+measures at $\beta \approx 1$. They steered it perfectly regardless. A principal
+therefore does not need to know an agent's discount factor to design an effective
+edit---which matters, since Section~\ref{sec:c3} suggests the factor may not exist.
+
+\textbf{The optimum buys cost, not robustness.} The two repairs differ on 9 of the
+12 instances and the hand-made one costs $45\%$ more in total (29 against 20), yet
+both succeed on every rollout. The hypothesis that the cheaper repair might be
+more fragile finds no support here. What the theory delivers on these instances is
+the same guarantee for less.
 
 \section{What measuring agents cost us}
 
@@ -367,9 +402,10 @@ Environment design is an alignment primitive with a measurable objective, a
 solver, and now a corpus. Two findings are ready to use: real task graphs are
 narrow but not therefore tractable, and the intuitive repair is optimal on the
 median instance and materially worse in a tail that structural narrowness does not
-predict. The third is a negative result about the premise---the behavioural model
+predict. The third separates the premise from the machinery: the behavioural model
 motivating this theory does not describe the agents it is now aimed at, at the
-scale we could test. That does not retire the theory; it locates where the
+scale we could test, while the interventions it licenses work regardless and
+without needing the discount factor to be known. That does not retire the theory; it locates where the
 question actually lives, which is at horizons long enough, or environments partial
 enough, that lookahead has a cost.
 
