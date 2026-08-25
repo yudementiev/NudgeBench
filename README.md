@@ -23,7 +23,9 @@ is developed; this repository is its first empirical evaluation.
 | Scientific-workflow corpus (`mcta.corpus.workflows`) | working, real task runtimes |
 | Exact and greedy solvers (`mcta.solve`) | working, exact checked against brute force |
 | Treewidth dynamic program (Theorem 1) | not started — optional from the outset |
-| LLM client for E1 and E4 | blocked on API access |
+| OpenRouter client (`mcta.probe.client`) | working, spend-capped, transcript-logged |
+| E1 probe on models | done — see C3 below |
+| E4 intervention experiment | running |
 
 ## First result (C1)
 
@@ -69,6 +71,31 @@ treewidth 2–3 — being narrow does not make the greedy choice right.
 .venv/bin/python scripts/e3.py
 ```
 
+## Third result (C3)
+
+No language-model agent we tested is present-biased. On real prerequisite
+closures of 8–26 arcs, presented in full:
+
+| Model | episodes | arithmetic | optimal route | β |
+|---|---|---|---|---|
+| claude-opus-5 | 40 | 100% | 98% | **[1.000, 1]** |
+| gemini-3.7-flash | 40 | 100% | 100% | **[0.846, 1]** |
+| deepseek-v4-flash | 8 | 100% | 88% | **[1.000, 1]** |
+
+The arithmetic control passes everywhere, so this is patience rather than
+incapacity, and the cheapest model is as patient as the frontier — the myopia
+hypothesis gets no support from either end. Traps calibrated to the human
+effort-discounting band β ∈ [0.70, 0.79] proved useless: every agent sat above it,
+and traps had to be rebuilt up to β = 0.99 before they bracketed anything.
+
+Scope is narrow on purpose: small, fully visible graphs are the regime where a
+bounded planning horizon has least room to show.
+
+```bash
+.venv/bin/python scripts/e1_corpus.py --dry-run       # free self-test
+.venv/bin/python scripts/e1_corpus.py --model MODEL   # see SETUP.md
+```
+
 Sources for every externally grounded number are in
 [REFERENCES.md](REFERENCES.md), including one citation in the paper that needs
 revisiting.
@@ -82,9 +109,14 @@ at every decision point. Those numbers are the test suite:
 .venv/bin/python -m pytest tests/ -q
 ```
 
-Ten tests cover the three stages of the paper's story — the agent taking the
-tempting shortcut, the deletion that merely diverts it, and the auxiliary arc
-that finally aligns it — plus abandonment and the effect of `beta` in isolation.
+173 tests, and they assert claims rather than absence of crashes: every number in
+the paper's worked example, the fitter recovering a β the harness was driven with,
+the exact solver agreeing with an independent brute force written in the tests,
+structural bounds containing the truth on graphs where theory settles it, and the
+loaders reproducing the published corpus figures. The suite gives identical
+results under three different `PYTHONHASHSEED` values, which is enforced rather
+than hoped for — three separate defects in this project came from set iteration
+order leaking into results.
 
 ## Setup
 
@@ -97,3 +129,12 @@ python3.11 -m venv .venv && .venv/bin/pip install -r requirements.txt
 - `mcta/model.py` — the instance, the agent's decision rule, feasible trajectories
 - `mcta/align.py` — T-avoiding arcs, the alignment verdict, violating witnesses
 - `mcta/examples.py` — reference instances with behavior known in advance
+- `mcta/generate.py` — calibrated traps and structural families
+- `mcta/structure.py` — treewidth and friends, as certified intervals
+- `mcta/solve.py` — exact branch and bound, witness-guided heuristic
+- `mcta/corpus/` — course-prerequisite networks and workflow traces
+- `mcta/probe/` — prompting, β recovery, OpenRouter client, aggregation
+- `scripts/` — one runnable experiment each; all take `--dry-run`
+- `paper/draft.md` — the write-up, with every measured number in place
+
+See [SETUP.md](SETUP.md) to run the agent experiments.
