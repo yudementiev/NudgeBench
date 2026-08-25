@@ -205,3 +205,48 @@ def test_agent_that_abandons_is_recorded_as_such():
     assert episode.abandoned
     assert not episode.reached_goal
     assert episode.trajectory == []
+
+
+@pytest.mark.parametrize(
+    "decorated",
+    [
+        "MOVE: {label}",
+        "**MOVE: {label}**",
+        "reasoning here\n\n**MOVE: {label}**",
+        "`MOVE: {label}`",
+        "## MOVE: {label}",
+        "> MOVE: {label}",
+        "MOVE:{label}",
+    ],
+)
+def test_a_compliant_answer_wearing_markdown_still_parses(decorated):
+    """Models follow the format and then decorate it, and the two are not refusals.
+
+    Reading `**MOVE: A5**` as unparseable cost one model a quarter of its episodes
+    - and cost them selectively, since whatever it chose to emphasise is not a
+    random slice. The parser tolerates decoration; the format itself is unchanged.
+    """
+    instance = figure_one()
+    presentation = presentation_for(instance)
+    arc = ("s", "b", 0)
+    label = presentation.arc_label[arc]
+
+    assert parse_move(decorated.format(label=label), presentation) == arc
+
+
+def test_decoration_does_not_split_identifiers():
+    """Underscores are legal in a label, so stripping them would break parsing."""
+    presentation = presentation_for(figure_one())
+    presentation.arc_by_label["L0_1"] = ("x", "y", 0)
+
+    assert parse_move("**MOVE: L0_1**", presentation) == ("x", "y", 0)
+
+
+def test_a_decorated_plan_parses_too():
+    presentation = presentation_for(figure_one())
+    route = [("s", "b", 0), ("b", "e", 0), ("e", "t", 0)]
+    labels = ", ".join(presentation.arc_label[a] for a in route)
+
+    parsed, total = parse_plan(f"**PLAN: {labels}**\n**TOTAL: 30**", presentation)
+
+    assert parsed == route and total == 30

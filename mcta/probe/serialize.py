@@ -189,13 +189,31 @@ def render_step_prompt(
     return "\n".join(lines)
 
 
-_PLAN_PATTERN = re.compile(r"^\s*PLAN\s*:\s*(.+?)\s*$", re.MULTILINE | re.IGNORECASE)
-_TOTAL_PATTERN = re.compile(r"^\s*TOTAL\s*:\s*(-?[\d.]+)\s*$", re.MULTILINE | re.IGNORECASE)
-_MOVE_PATTERN = re.compile(r"^\s*MOVE\s*:\s*([A-Za-z0-9_]+)\s*$", re.MULTILINE | re.IGNORECASE)
+# Underscore is deliberately not stripped: it is legal inside an identifier, and
+# removing it would split a label like L0_0 into two tokens.
+_EMPHASIS = re.compile(r"[*`#>\s]+")
+
+
+def _normalise(reply: str) -> str:
+    """Strip markdown decoration from the edges of every line before matching.
+
+    Models answer the format correctly and then dress it up: `**MOVE: A5**` is a
+    compliant answer wearing bold. Reading that as a refusal would drop a quarter
+    of one model's episodes and, worse, drop them selectively - the surviving
+    subsample is whatever the model chose not to emphasise, which is not a random
+    slice of anything.
+    """
+    return "\n".join(_EMPHASIS.sub(" ", line).strip() for line in reply.splitlines())
+
+
+_PLAN_PATTERN = re.compile(r"^PLAN\s*:\s*(.+?)$", re.MULTILINE | re.IGNORECASE)
+_TOTAL_PATTERN = re.compile(r"^TOTAL\s*:\s*(-?[\d.]+)", re.MULTILINE | re.IGNORECASE)
+_MOVE_PATTERN = re.compile(r"^MOVE\s*:\s*([A-Za-z0-9_]+)", re.MULTILINE | re.IGNORECASE)
 
 
 def parse_plan(reply: str, presentation: Presentation) -> tuple[list[Arc] | None, float | None]:
     """Read the PLAN and TOTAL lines. The last occurrence of each wins."""
+    reply = _normalise(reply)
     plan_matches = _PLAN_PATTERN.findall(reply)
     total_matches = _TOTAL_PATTERN.findall(reply)
 
@@ -211,7 +229,7 @@ def parse_plan(reply: str, presentation: Presentation) -> tuple[list[Arc] | None
 
 def parse_move(reply: str, presentation: Presentation) -> Arc | str | None:
     """Read the MOVE line. Returns an arc, the string "STOP", or None if unparseable."""
-    matches = _MOVE_PATTERN.findall(reply)
+    matches = _MOVE_PATTERN.findall(_normalise(reply))
     if not matches:
         return None
     token = matches[-1].strip().upper()
