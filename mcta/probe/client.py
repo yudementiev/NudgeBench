@@ -189,6 +189,9 @@ class OpenRouter:
         self.retries = retries
         self.sample = 0
         self.tag = ""
+        self.last_finish_reason = ""
+        """Why the most recent call stopped. Callers read this to tell a reply
+        cut off mid-thought from one that ignored the format."""
         # Record whether we will really hit the network as a flag: comparing bound
         # methods with `is` is always false, since each attribute access makes a
         # fresh object, which would silently disable the missing-key check.
@@ -199,6 +202,7 @@ class OpenRouter:
     def __call__(self, prompt: str) -> str:
         key = (self.model, prompt, self.temperature, self.effort, self.sample)
         if key in self._replay:
+            self.last_finish_reason = "replayed"
             return self._replay[key]
 
         if not self.api_key and self._uses_network:
@@ -234,6 +238,7 @@ class OpenRouter:
         # estimate only when the field is absent.
         reported = usage.get("cost")
         estimated = reported is None
+        self.last_finish_reason = usage.get("_finish_reason", "")
         cost = (
             self.pricing.charge(usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0))
             if estimated

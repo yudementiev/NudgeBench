@@ -158,7 +158,12 @@ def walk(
 
         move = parse_move(reply, presentation)
         if move is None:
-            reason = "truncated" if not reply.strip() else "unparseable"
+            # Ask the responder why it stopped rather than guessing from the text. A
+            # reply cut off mid-sentence is not empty, so inferring truncation from
+            # emptiness alone misses exactly the case that matters: an agent that
+            # deliberated past its budget looks like one that refused the format.
+            stopped = getattr(responder, "last_finish_reason", "")
+            reason = "truncated" if stopped == "length" or not reply.strip() else "unparseable"
             episode.parse_failure = f"{reason} move at {presentation.label_of(node)}"
             break
         if move == "STOP":

@@ -1,0 +1,15 @@
+{
+  "instances": 20,
+  "episodes": 40,
+  "beta_lower": 0.7692307692307693,
+  "beta_upper": 0.7692307692307693,
+  "consistent": false,
+  "conflicts": [
+    "gemini-3.7-flash uncertain#14: needs [0.846, 1.000], incompatible with [0.769, 0.769]",
+    "gemini-3.7-flash uncertain#15: needs [0.846, 1.000], incompatible with [0.769, 0.769]"
+  ],
+  "arithmetic_rate": 1.0,
+  "divergence_rate": 0.07499999999999996,
+  "optimal_rate": 0.975,
+  "parse_failure_rate": 0.0
+}

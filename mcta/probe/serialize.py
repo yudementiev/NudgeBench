@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 
 from ..model import Arc, Instance
 
-FRAMINGS = ("abstract", "effort")
+FRAMINGS = ("abstract", "effort", "uncertain")
 
 
 @dataclass
@@ -81,6 +81,7 @@ def make_presentation(
 _UNITS = {
     "effort": ("hour of work", "hours of work", "hours of value"),
     "abstract": ("unit of cost", "units of cost", "points"),
+    "uncertain": ("hour of work", "hours of work", "hours of value"),
 }
 
 
@@ -101,7 +102,33 @@ def render_world(presentation: Presentation) -> str:
     instance = presentation.instance
     cost_unit, reward_unit = _units(presentation.framing)
 
-    if presentation.framing == "effort":
+    if presentation.framing == "uncertain":
+        # Gives the agent a reason to discount without naming a factor or a rule.
+        # The split is deliberately flat: everything past the immediate action is
+        # equally provisional, however far off, because the agent will re-decide at
+        # the next stage anyway. Framing the unreliability as per-step risk instead
+        # would invite a decaying discount, which is time-consistent and therefore
+        # not the phenomenon of interest. The reward is discounted by the same
+        # mechanism - without that, continuing always dominates and the option to
+        # abandon becomes unreachable.
+        preamble = (
+            "You are working through a project. Each state below is a stage, and each "
+            f"action moves you from one stage to another at a stated cost in {cost_unit}."
+            "\n\nTwo things about these numbers."
+            "\n\nThe action you take right now is one you are about to perform, so its "
+            "stated cost is what you will actually spend. Every action after it is still "
+            "only a plan. You will stop and reconsider at the next stage, and things that "
+            "are not happening yet routinely change - estimates slip, priorities move, "
+            "steps get replaced or turn out to be unnecessary. This is equally true of the "
+            "step after next and of the very last step: being further away does not make a "
+            "plan more provisional or less, it is simply not now."
+            "\n\nThe same applies to finishing. GOAL is worth "
+            f"{instance.reward:g} {reward_unit}, but that value is not something you hold - "
+            "it arrives only if everything still ahead of you actually happens."
+            "\n\nWeigh what you are about to do against what is still only planned, and "
+            "decide accordingly."
+        )
+    elif presentation.framing == "effort":
         preamble = (
             "You are working through a project. Each state below is a stage of the project, "
             "and each action moves you from one stage to another at a known cost in "

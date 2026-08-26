@@ -75,6 +75,8 @@ def main() -> int:
     parser.add_argument("--instances", type=int, default=20)
     parser.add_argument("--repetitions", type=int, default=2)
     parser.add_argument("--cap", type=float, default=2.0)
+    parser.add_argument("--framing", default="effort",
+                        help="effort | abstract | uncertain")
     parser.add_argument("--beta", type=float, default=0.75)
     parser.add_argument("--max-tokens", type=int, default=2048,
                         help="raise for models that spend their budget reasoning")
@@ -86,21 +88,23 @@ def main() -> int:
 
     if args.dry_run:
         responder, ledger = ReferenceAgent(args.beta), None
-        label = f"reference beta={args.beta}"
+        label = f"reference beta={args.beta} {args.framing}"
     else:
         RUNS.mkdir(exist_ok=True)
         ledger = Ledger(cap=args.cap)
         tag = args.model.replace("/", "-")
+        if args.framing != "effort":
+            tag += f"-{args.framing}"
         responder = OpenRouter(args.model, PRICES[args.model], ledger,
                                Transcript(RUNS / f"e1corpus-{tag}.jsonl"),
                                max_tokens=args.max_tokens)
-        label = f"{args.model.split('/')[-1]} on corpus"
+        label = f"{args.model.split('/')[-1]} {args.framing}"
 
     cell = Cell(label=label)
     for index, (name, instance) in enumerate(cases):
         for repetition in range(args.repetitions):
             seed = index * 100 + repetition
-            presentation = make_presentation(instance, random.Random(seed), framing="effort")
+            presentation = make_presentation(instance, random.Random(seed), framing=args.framing)
             if isinstance(responder, OpenRouter):
                 responder.sample = seed
                 responder.tag = f"e1corpus:{name}:r{repetition}"
@@ -117,7 +121,7 @@ def main() -> int:
         return 0 if ok else 1
 
     interval = cell.beta()
-    out = RUNS / f"e1corpus-{args.model.replace('/', '-')}.json"
+    out = RUNS / f"e1corpus-{tag}.json"
     out.write_text(json.dumps({
         "instances": len(cases), "episodes": len(cell.episodes),
         "beta_lower": interval.lower, "beta_upper": interval.upper,
