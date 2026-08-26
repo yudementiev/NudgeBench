@@ -1,0 +1,186 @@
+{
+  "totals": {
+    "unedited": [
+      0,
+      240
+    ],
+    "greedy": [
+      240,
+      240
+    ],
+    "optimal": [
+      240,
+      240
+    ]
+  },
+  "per_case": {
+    "CS 101": {
+      "unedited": [
+        0,
+        20
+      ],
+      "greedy": [
+        20,
+        20
+      ],
+      "optimal": [
+        20,
+        20
+      ]
+    },
+    "CS 120": {
+      "unedited": [
+        0,
+        20
+      ],
+      "greedy": [
+        20,
+        20
+      ],
+      "optimal": [
+        20,
+        20
+      ]
+    },
+    "CS 142": {
+      "unedited": [
+        0,
+        20
+      ],
+      "greedy": [
+        20,
+        20
+      ],
+      "optimal": [
+        20,
+        20
+      ]
+    },
+    "CS 143": {
+      "unedited": [
+        0,
+        20
+      ],
+      "greedy": [
+        20,
+        20
+      ],
+      "optimal": [
+        20,
+        20
+      ]
+    },
+    "CS 151": {
+      "unedited": [
+        0,
+        20
+      ],
+      "greedy": [
+        20,
+        20
+      ],
+      "optimal": [
+        20,
+        20
+      ]
+    },
+    "CS 152": {
+      "unedited": [
+        0,
+        20
+      ],
+      "greedy": [
+        20,
+        20
+      ],
+      "optimal": [
+        20,
+        20
+      ]
+    },
+    "CS 153": {
+      "unedited": [
+        0,
+        20
+      ],
+      "greedy": [
+        20,
+        20
+      ],
+      "optimal": [
+        20,
+        20
+      ]
+    },
+    "ChE 111": {
+      "unedited": [
+        0,
+        20
+      ],
+      "greedy": [
+        20,
+        20
+      ],
+      "optimal": [
+        20,
+        20
+      ]
+    },
+    "ChE 188": {
+      "unedited": [
+        0,
+        20
+      ],
+      "greedy": [
+        20,
+        20
+      ],
+      "optimal": [
+        20,
+        20
+      ]
+    },
+    "ACM 105": {
+      "unedited": [
+        0,
+        20
+      ],
+      "greedy": [
+        20,
+        20
+      ],
+      "optimal": [
+        20,
+        20
+      ]
+    },
+    "ACM 106 ab": {
+      "unedited": [
+        0,
+        20
+      ],
+      "greedy": [
+        20,
+        20
+      ],
+      "optimal": [
+        20,
+        20
+      ]
+    },
+    "ACM 204": {
+      "unedited": [
+        0,
+        20
+      ],
+      "greedy": [
+        20,
+        20
+      ],
+      "optimal": [
+        20,
+        20
+      ]
+    }
+  }
+}

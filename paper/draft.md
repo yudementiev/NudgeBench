@@ -22,7 +22,7 @@ curricula and scientific workflows, annotated with the structural parameters tha
 govern tractability; exact and heuristic solvers; and an agent-in-the-loop probe
 that estimates an agent's discount factor exactly rather than by fitting. We
 report three results. Real task graphs are structurally narrow — treewidth in
-single digits where prior measurements of network data report hundreds — yet a
+single digits where prior measurements of network data report hundreds — yet
 two of seven workflow families remain intractable regardless, because tractability
 turns on weight diversity as much as on width. The repair an engineer would make
 by hand matches the optimum on the median real instance and costs up to 2.67× more

@@ -1,0 +1,13 @@
+{
+  "none": {
+    "episodes": 100,
+    "beta_lower": 0.9830508474576272,
+    "beta_upper": 1.0,
+    "consistent": true,
+    "conflicts": [],
+    "arithmetic_rate": 1.0,
+    "divergence_rate": 0.0,
+    "optimal_rate": 1.0,
+    "parse_failure_rate": 0.0
+  }
+}

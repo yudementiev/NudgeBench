@@ -1,0 +1,12 @@
+{
+  "instances": 20,
+  "episodes": 40,
+  "beta_lower": 1.0,
+  "beta_upper": 1.0,
+  "consistent": true,
+  "conflicts": [],
+  "arithmetic_rate": 1.0,
+  "divergence_rate": 0.07499999999999996,
+  "optimal_rate": 0.975,
+  "parse_failure_rate": 0.025
+}
