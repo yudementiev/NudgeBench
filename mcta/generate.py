@@ -545,3 +545,60 @@ def deep_sweep(band: str | tuple[float, float] = "agentic", count: int = 5,
         if len(set(round(r, 6) for r in realised)) == count and all(r < 1 for r in realised):
             return traps
     raise ValueError(f"no unit gives {count} distinct thresholds in {band} at depth {depth}")
+
+
+def deferral_trap(big: int = 13, small: int = 2, branches: int = 3, depth: int = 3,
+                  *, beta: float = 0.75, reward: float | None = None) -> Generated:
+    """The configuration a real agent actually fell for, generalised.
+
+    Found by inspecting the one instance in the complexity sweep where an agent
+    deviated. Standing at a node it had two kinds of option: a single large arc
+    straight to the target, or several cheap arcs leading to nodes offering exactly
+    the same choice again. It took a cheap one, saying so explicitly - "minimizes
+    immediate expenditure" - and paid more in total.
+
+    The threshold follows from the structure rather than being solved for: taking
+    the cheap step means paying `small` now against a discounted `big` later,
+    versus `big` now, so deferral is preferred exactly when
+
+        small + beta * big  <  big,   i.e.   beta < 1 - small/big.
+
+    At `big`=13 and `small`=2 that is 0.846, which is the bound the agent's own
+    behaviour produced.
+
+    What makes this worth generating rather than merely observing: the choice at
+    the next node is *identical*, so a naive agent below the threshold defers again,
+    and again, paying `small` each time for a `big` step it never avoids. Depth
+    therefore measures how far procrastination actually runs, which a two-route trap
+    cannot ask.
+    """
+    if not 0 < small < big:
+        raise ValueError("the deferral must be cheaper than the step it defers")
+    if depth < 1 or branches < 1:
+        raise ValueError("need at least one level and one deferral option")
+
+    graph = nx.MultiDiGraph()
+    graph.add_edge("s", "t", key=0, weight=float(big))
+    previous = ["s"]
+    for level in range(1, depth + 1):
+        nodes = [f"d{level}_{i}" for i in range(branches)]
+        for node in nodes:
+            graph.add_edge(node, "t", key=0, weight=float(big))
+        for tail in previous:
+            for node in nodes:
+                graph.add_edge(tail, node, key=0, weight=float(small))
+        previous = nodes
+
+    total = depth * small + big
+    instance = Instance(graph, "s", "t", beta,
+                        reward if reward is not None else 4.0 * total)
+    return Generated(
+        instance=instance,
+        spec=Spec(
+            family="deferral_trap",
+            threshold=1 - small / big,
+            costs_effort=True,
+            notes=(f"defer {small} to postpone {big}, {branches} ways, {depth} deep; "
+                   f"straight through costs {big}, deferring all the way costs {total}"),
+        ),
+    )

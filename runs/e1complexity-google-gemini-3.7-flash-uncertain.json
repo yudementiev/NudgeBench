@@ -1,0 +1,54 @@
+{
+  "1-3": {
+    "instances": 8,
+    "arcs_min": 8,
+    "arcs_max": 22,
+    "episodes": 16,
+    "beta_lower": 0.8461538461538461,
+    "beta_upper": 1.0,
+    "consistent": true,
+    "arithmetic_rate": 1.0,
+    "optimal_rate": 1.0,
+    "truncation_rate": 0.0,
+    "parse_failure_rate": 0.0
+  },
+  "4-6": {
+    "instances": 8,
+    "arcs_min": 10,
+    "arcs_max": 23,
+    "episodes": 16,
+    "beta_lower": 0.7692307692307693,
+    "beta_upper": 1.0,
+    "consistent": true,
+    "arithmetic_rate": 1.0,
+    "optimal_rate": 1.0,
+    "truncation_rate": 0.0,
+    "parse_failure_rate": 0.0
+  },
+  "7-10": {
+    "instances": 8,
+    "arcs_min": 19,
+    "arcs_max": 36,
+    "episodes": 16,
+    "beta_lower": 0.75,
+    "beta_upper": 1.0,
+    "consistent": true,
+    "arithmetic_rate": 1.0,
+    "optimal_rate": 1.0,
+    "truncation_rate": 0.0,
+    "parse_failure_rate": 0.0
+  },
+  "11+": {
+    "instances": 8,
+    "arcs_min": 45,
+    "arcs_max": 86,
+    "episodes": 16,
+    "beta_lower": 0.75,
+    "beta_upper": 0.8461538461538461,
+    "consistent": true,
+    "arithmetic_rate": 1.0,
+    "optimal_rate": 0.875,
+    "truncation_rate": 0.0,
+    "parse_failure_rate": 0.0
+  }
+}

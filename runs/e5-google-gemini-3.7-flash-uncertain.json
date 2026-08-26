@@ -1,0 +1,72 @@
+{
+  "10/2": {
+    "threshold": 0.8,
+    "episodes": 20,
+    "reached_goal": 20,
+    "deferral_episodes": 0,
+    "total_deferrals": 0,
+    "mean_cost": 10.0,
+    "direct_cost": 10,
+    "beta_lower": 0.8,
+    "beta_upper": 1.0,
+    "consistent": true,
+    "arithmetic_rate": 1.0,
+    "truncation_rate": 0.0
+  },
+  "13/2": {
+    "threshold": 0.8461538461538461,
+    "episodes": 20,
+    "reached_goal": 20,
+    "deferral_episodes": 1,
+    "total_deferrals": 1,
+    "mean_cost": 13.1,
+    "direct_cost": 13,
+    "beta_lower": 0.8461538461538461,
+    "beta_upper": 0.8461538461538461,
+    "consistent": true,
+    "arithmetic_rate": 1.0,
+    "truncation_rate": 0.0
+  },
+  "20/2": {
+    "threshold": 0.9,
+    "episodes": 20,
+    "reached_goal": 20,
+    "deferral_episodes": 5,
+    "total_deferrals": 14,
+    "mean_cost": 21.4,
+    "direct_cost": 20,
+    "beta_lower": 0.9,
+    "beta_upper": 0.9,
+    "consistent": true,
+    "arithmetic_rate": 1.0,
+    "truncation_rate": 0.0
+  },
+  "20/1": {
+    "threshold": 0.95,
+    "episodes": 20,
+    "reached_goal": 20,
+    "deferral_episodes": 5,
+    "total_deferrals": 8,
+    "mean_cost": 20.4,
+    "direct_cost": 20,
+    "beta_lower": 0.95,
+    "beta_upper": 0.95,
+    "consistent": true,
+    "arithmetic_rate": 1.0,
+    "truncation_rate": 0.0
+  },
+  "50/1": {
+    "threshold": 0.98,
+    "episodes": 20,
+    "reached_goal": 20,
+    "deferral_episodes": 7,
+    "total_deferrals": 18,
+    "mean_cost": 50.9,
+    "direct_cost": 50,
+    "beta_lower": 0.98,
+    "beta_upper": 0.98,
+    "consistent": true,
+    "arithmetic_rate": 1.0,
+    "truncation_rate": 0.0
+  }
+}
