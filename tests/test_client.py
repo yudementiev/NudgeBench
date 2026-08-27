@@ -252,3 +252,24 @@ def test_a_missing_dotenv_is_not_an_error(tmp_path):
     from mcta.probe.client import load_env
 
     load_env(tmp_path / "nothing-here")
+
+
+def test_a_truncated_reply_is_never_replayed(tmp_path):
+    """Replaying a cut-off answer would make raising the token ceiling pointless."""
+    path = tmp_path / "calls.jsonl"
+    transcript = Transcript(path)
+    transcript.append(Call(
+        model="stub/model", prompt="the question", reply="I was thinking about",
+        temperature=1.0, effort=None, sample=0, prompt_tokens=10, completion_tokens=2048,
+        cost=0.01, latency_ms=1.0, finish_reason="length",
+    ))
+    transcript.append(Call(
+        model="stub/model", prompt="another question", reply="MOVE: A1",
+        temperature=1.0, effort=None, sample=0, prompt_tokens=10, completion_tokens=5,
+        cost=0.01, latency_ms=1.0, finish_reason="stop",
+    ))
+
+    index = transcript.replay_index()
+
+    assert ("stub/model", "another question", 1.0, None, 0) in index
+    assert ("stub/model", "the question", 1.0, None, 0) not in index

@@ -26,15 +26,19 @@ single digits where prior measurements of network data report hundreds — yet
 two of seven workflow families remain intractable regardless, because tractability
 turns on weight diversity as much as on width. The repair an engineer would make
 by hand matches the optimum on the median real instance and costs up to 2.67× more
-in the tail, on instances of treewidth two. And on graphs of up to 26 arcs
-presented in full, we find **no present bias in any language-model agent we
-tested**, from frontier models down to the cheapest available: the discount factor
-is pinned at or near 1 in every case, with arithmetic controls passing throughout.
-The behavioural model that motivates this line of theory does not, at this scale,
-describe the agents it is now being applied to. The intervention machinery,
-however, transfers intact: theory-derived edits move compliance from 0% to 100%
-across the whole sampling distribution, and do so even though they were computed
-for a discount factor the agent does not have.
+in the tail, on instances of treewidth two. On general graphs no
+language-model agent we tested shows present bias, at any capability. But the
+benchmark's inspection tooling led us to a structural configuration where one model
+does, reliably and repeatedly — a large step toward the goal beside cheap ways of
+postponing it — and another does not at all. The behavioural premise therefore
+holds in an identifiable class of environments rather than universally, while the
+intervention machinery transfers intact: theory-derived edits move compliance from
+0% to 100% across the whole sampling distribution, computed for a discount factor
+the agent does not have.
+
+**The LaTeX in `paper/mcta_bench.tex` is the current version** — it carries the
+expanded dataset section (§3) and the deferral result, and compiles to 7 pages of
+body plus references. This markdown is kept as the readable companion.
 
 ---
 

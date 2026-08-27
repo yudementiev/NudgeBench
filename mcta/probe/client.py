@@ -148,11 +148,17 @@ class Transcript:
         Keyed on the sample index as well as the prompt, because E4 deliberately
         draws repeated samples at temperature above zero and they must not collapse
         into one cached answer.
+
+        Replies cut off at the token ceiling are deliberately excluded. They carry
+        no error and plenty of text, so replaying them would hand back a half-finished
+        thought as though it were an answer - and would make raising the ceiling
+        useless, since the rerun would serve the same truncation from the log. Their
+        absence is what lets a rerun retry exactly the calls that failed.
         """
         return {
             (call.model, call.prompt, call.temperature, call.effort, call.sample): call.reply
             for call in self.read()
-            if not call.error
+            if not call.error and call.finish_reason != "length"
         }
 
 

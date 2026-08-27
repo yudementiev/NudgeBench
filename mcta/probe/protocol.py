@@ -163,7 +163,17 @@ def walk(
             # emptiness alone misses exactly the case that matters: an agent that
             # deliberated past its budget looks like one that refused the format.
             stopped = getattr(responder, "last_finish_reason", "")
-            reason = "truncated" if stopped == "length" or not reply.strip() else "unparseable"
+            if stopped == "content_filter":
+                # The provider stopped generation for its own reasons. Neither our
+                # settings nor the agent's judgement, and calling it either would
+                # misdirect the next fix - as it did once here.
+                reason = "filtered"
+            elif stopped == "length":
+                reason = "truncated"
+            elif not reply.strip():
+                reason = "empty"
+            else:
+                reason = "unparseable"
             episode.parse_failure = f"{reason} move at {presentation.label_of(node)}"
             break
         if move == "STOP":
