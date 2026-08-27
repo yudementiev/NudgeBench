@@ -8,10 +8,12 @@ from .cpn import (
     load_jhu,
     to_instance,
 )
+from .taskbench import Decomposition
 from .workflows import Trace, load_all, load_trace
 
 __all__ = [
     "Course",
+    "Decomposition",
     "Trace",
     "load_all",
     "load_jhu",
