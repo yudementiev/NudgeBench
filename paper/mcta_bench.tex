@@ -18,6 +18,7 @@
 \usepackage{booktabs}
 \usepackage{microtype}
 \usepackage{graphicx}
+\usepackage{float}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning}
 \usepackage[hidelinks]{hyperref}
@@ -98,10 +99,10 @@ prescribed set of critical arcs.
 
 This line has produced a detailed complexity landscape and no experiments. Nobody
 has run the algorithms, measured the environments they assume, or checked the
-behavioural premise against an actual agent. A benchmark is what each of those
-needs, and none exists: the instances have to be real enough to say something about
-deployment, annotated with the parameters the theory is stated in, and paired with
-solvers whose answers can be trusted well enough to compare against.
+behavioural premise against an actual agent. Each needs a benchmark that does not
+exist: instances real enough to say something about deployment, annotated with the
+parameters the theory is stated in, and solvers trustworthy enough to compare
+against.
 
 One observation frames the exercise. An agent sampling at temperature above zero is
 precisely the nondeterministic tie-breaker the model's all-feasible-paths
@@ -129,6 +130,7 @@ the tempting route is not generally enough.
 \begin{figure}[t]
 \centering
 \begin{tikzpicture}[
+  scale=0.82, transform shape,
   >={Stealth[length=2mm]},
   every node/.style={font=\small},
   st/.style={circle,draw,minimum size=6mm,inner sep=0pt},
@@ -230,14 +232,11 @@ the only corpus here drawn from agent tasks rather than human ones, which is wha
 makes its emptiness in Table~\ref{tab:corpus} informative rather than merely
 disappointing.
 
-\textbf{Course-prerequisite networks.} A course network is a DAG whose arcs run
-from a prerequisite to the course requiring it. An MCTA instance is the
-\emph{prerequisite closure} of a chosen target course: every course that can reach
-it, plus a virtual source joined to those with no prerequisites of their own. A
-path is then one order in which a student could arrive at the target. Instances are
-kept when the closure holds at least six courses and runs at least three deep,
-which excludes the many targets that pose no choice at all. Caltech yields 169 such
-instances from 771 courses, Johns Hopkins 533 from 10\,075.
+\textbf{Course-prerequisite networks.} An instance is the \emph{prerequisite
+closure} of a target course---everything that can reach it, plus a virtual source
+joined to the entry points---so a path is one order in which a student could arrive
+there. Closures of at least six courses and depth three are kept: Caltech yields 169
+from 771 courses, Johns Hopkins 533 from 10\,075.
 
 One mapping decision limits every corpus here and we state it rather than bury it:
 dependency graphs are \emph{conjunctive}---a task needs all its inputs---while an
@@ -259,19 +258,13 @@ continuous runtimes deciding tractability as much as topology does.
 \label{sec:discriminating}
 
 Most instances are useless for probing an agent, and quietly so. If every route
-costs the same, or if one route dominates at every discount factor, the agent
-reveals nothing by choosing: a patient planner and a heavily biased one produce the
-same trajectory. Reporting such an episode as evidence of patience would be an
-error, and pooling many of them would swamp the informative ones.
-
-MCTA-Bench therefore marks an instance \emph{discriminating} when a patient agent
-($\beta = 1$) and a biased one ($\beta = 0.4$) walk different routes, and the agent
-experiments draw only from those. The fraction is around one in five
-(Table~\ref{tab:corpus}), and the survivors are structurally distinct from the rest:
-in Caltech they run 8--26 arcs (median 14) with 2--7 choice points (median 3), in
-Johns Hopkins 7--180 arcs (median 34) with up to 36 choice points (median 7). We
-report the filter rather than only its output because the same corpus filtered
-differently would support different conclusions.
+costs the same, or one dominates at every discount factor, a patient planner and a
+heavily biased one produce the same trajectory; reporting such an episode as evidence
+of patience would be an error, and pooling many would swamp the informative ones.
+MCTA-Bench therefore marks an instance \emph{discriminating} when $\beta = 1$ and
+$\beta = 0.4$ walk different routes, and the agent experiments draw only from those.
+We report the filter rather than only its output, because the same corpus filtered
+differently supports different conclusions.
 
 Curriculum data carries no workload column, so weights on those instances are drawn
 from a small integer palette $\{2,3,5,8,13\}$. This is an assumption, not a
@@ -293,13 +286,12 @@ variant stretches each route into a chain, so comparing them means summing sever
 numbers rather than one.
 
 \textbf{Compliance families.} Present bias hurts in two distinguishable ways, and
-the paper's own worked example is the second: in Figure~\ref{fig:example} the
-tempting route is also the \emph{cheapest}, so nothing is wasted and only compliance
-fails. \texttt{equal\_cost\_compliance} matches both routes' totals exactly, which
-forces the threshold to $1$ by algebra---any bias at all defects---making it the
-most sensitive detector we can build at the cost of not localising $\beta$.
-\texttt{costly\_compliance} puts the required action on a route that is dearer
-outright, so no $\beta$ complies unaided and only editing the environment helps.
+Figure~\ref{fig:example} is the second: the tempting route is also the
+\emph{cheapest}, so nothing is wasted and only compliance fails. Matching both
+routes' totals forces the threshold to $1$ by algebra---any bias at all
+defects---giving the most sensitive detector available at the cost of not localising
+$\beta$; putting the required action on a route dearer outright means no $\beta$
+complies unaided and only editing the environment helps.
 
 \textbf{Deferral traps.} A node offers one large arc straight to the target and
 several cheap arcs leading to nodes offering \emph{the same choice again}. Deferring
@@ -315,30 +307,23 @@ workflows~\cite{bharathi}. Series-parallel composition keeps treewidth at most t
 which is the regime where MCTA is already NP-hard, so those instances are where a
 small structural parameter provably fails to rescue the problem.
 
-\subsection{Annotation, solvers, and what is released}
+\subsection{Annotation, solvers, and release}
 
 Every instance carries the parameters Theorem~8 of~\cite{belova2026} is stated in:
 treewidth, pathwidth, vertex cover, feedback vertex set, longest path $p$, distinct
 arc weights $|W|$, and the distinct path weights $|L|$ the dynamic program is
-exponential in. Three are NP-hard, so each is a \emph{certified interval} rather than
-a point---treewidth floored by minor-min-width, capped by the better of two
-elimination heuristics, each exhibiting a real decomposition. ``At most 6'' is sound
-whatever the truth; ``is 6'' would not be.
-
-Two solvers ship: an exact branch and bound calling the polynomial alignment oracle
-at every node and reporting whether optimality was proved or the budget ran out, and
-a witness-guided heuristic rendering the engineer's move as an algorithm---watch the
-agent take a route it should not, block one step, repeat. The exact solver is
-validated against an independent brute force written in the tests rather than the
-library, so a shared mistake cannot hide.
-
-Released: the four corpora as loaders (the data itself is fetched from its authors,
-not vendored), the six generators, the structural measurement, both solvers, the
-agent probe, and the full transcript of every API call made for this paper---prompt,
-reply, token counts and charge---so that every number can be re-scored without
-re-spending. The suite of 174 tests asserts claims rather than absence of crashes,
-and is checked under three different hash seeds; Section~\ref{sec:cost} explains
-why that last detail is not pedantry.
+exponential in. The three NP-hard ones are \emph{certified intervals} rather than
+points---treewidth floored by minor-min-width, capped by the better of two
+elimination heuristics, each exhibiting a real decomposition---because ``at most 6''
+is sound whatever the truth and ``is 6'' is not. Two solvers ship: an exact branch
+and bound reporting whether optimality was proved or the budget ran out, validated
+against an independent brute force written in the tests rather than the library, and
+a witness-guided heuristic rendering the engineer's move as an algorithm. Released
+with them: the four corpora as loaders (data fetched from its authors, not vendored),
+the generators, the structural measurement, the agent probe, and the full transcript
+of every API call made for this paper, so any number can be re-scored without
+re-spending. The 179 tests assert claims rather than absence of crashes and run under
+three hash seeds, for reasons Appendix~\ref{app:cost} makes clear.
 
 \section{Environments are narrow, and that is not enough}
 \label{sec:c1}
@@ -387,7 +372,7 @@ of account is a design parameter of the intervention, not an implementation deta
 \section{The intuitive repair is usually right and occasionally expensive}
 \label{sec:c2}
 
-\begin{table}[t]
+\begin{table}[H]
 \centering
 \begin{tabular}{lrrrr}
 \toprule
@@ -414,11 +399,10 @@ begins to bite in practice.
 \subsection{The probe}
 
 Each episode puts one agent through two conditions on one instance: state a complete
-route from the source, then walk it one committed action at a time. The agent sees
-the whole graph in both---present bias is discounting the future, not being blind to
-it, so hiding the future would measure something else entirely. Node and arc labels
-are re-randomised every episode, since the worked example of~\cite{belova2026} is
-published and a model that recognises it would be reciting rather than deciding.
+route, then walk it one committed action at a time. The agent sees the whole graph in
+both---present bias is discounting the future, not being blind to it. Labels are
+re-randomised every episode, since the worked example of~\cite{belova2026} is
+published and a model recognising it would be reciting rather than deciding.
 
 $\beta$ is recovered exactly rather than fitted. Choosing $e^\ast$ over $e$ requires
 $w(e^\ast) + \beta\, d(\mathrm{head}(e^\ast)) \leq w(e) + \beta\, d(\mathrm{head}(e))$,
@@ -435,7 +419,7 @@ things and one of them is not about the agent at all.
 
 \subsection{No present bias on general graphs}
 
-\begin{table}[t]
+\begin{table}[H]
 \centering
 \begin{tabular}{lrrrl}
 \toprule
@@ -510,7 +494,7 @@ waste.
 
 \subsection{Theory-derived edits steer the agent}
 
-\begin{table}[t]
+\begin{table}[H]
 \centering
 \begin{tabular}{lrrl}
 \toprule
@@ -540,32 +524,24 @@ and the hand-made one costs $45\%$ more, yet both succeed on every rollout.
 \label{sec:cost}
 
 Four times a defect in our own harness presented as a property of the agent, and
-each would have entered this paper as a finding: a parser that could not read a
-compliant answer wearing bold, node order leaking from set iteration, our own output
-ceiling exhausted mid-thought, and a provider content filter that our uncertainty
-framing triggered on $25\%$ of calls against $3\%$ for the neutral one. The first is
-the worst, because those episodes were dropped \emph{selectively}---whatever a model
-chooses to emphasise is not a random slice---so the discount factor was fitted to a
-biased subsample. A fifth failure was of \emph{analysis} rather than harness: an
-intersected interval says nothing about how many episodes hold its edges. Every
-failure is now reported by cause, a robustness check ships with the benchmark, and
-Appendix~\ref{app:cost} gives the full account, which we think is the part of this
+each would have entered this paper as a finding---most damagingly a parser that
+could not read a compliant answer wearing bold, which dropped a quarter of one
+model's episodes \emph{selectively}, since whatever a model chooses to emphasise is
+not a random slice. A fifth failure was of analysis rather than harness: an
+intersected interval says nothing about how many episodes hold its edges.
+Appendix~\ref{app:cost} gives the full account, which we believe is the part of this
 work most reusable by anyone else measuring agents.
 
-\section{Limitations}
-
-Weights on the curriculum corpora are synthetic; only the workflow traces carry
-measured ones. The conjunctive-to-sequential mapping is a modelling choice, and the
-Johns Hopkins figures bound its structure from above rather than measuring it. The
-exact solver is branch and bound, not the treewidth dynamic program, so the theory's
-main algorithm remains unexecuted. The deferral configuration was found by watching
-one model and confirmed against one other; two models is a contrast, not a
-population, and the cells' confidence intervals overlap, so the rise with threshold
-is visible in point estimates and not established statistically. Graphs remain small
-and fully visible---the regime where a bounded planning horizon has least room to
-appear.
-
 \section{Conclusion}
+
+\textbf{Limitations.} Weights on the curriculum and agent corpora are synthetic;
+only workflow traces carry measured ones. The conjunctive-to-sequential mapping is a
+modelling choice, and the Johns Hopkins figures bound its structure from above. The
+treewidth dynamic program remains unexecuted---our exact solver is branch and bound.
+The deferral configuration was found by watching one model and confirmed against one
+other, which is a contrast rather than a population, and the cells' intervals overlap,
+so the rise with threshold is visible in point estimates and not established
+statistically.
 
 Environment design is an alignment primitive with a measurable objective, a solver,
 and now a corpus. Real task graphs are narrow but not therefore tractable. The
@@ -586,7 +562,7 @@ Four times a defect in our own harness presented as a property of the agent, eac
 time plausibly (Table~\ref{tab:defects}). Each would have entered this paper as a
 finding.
 
-\begin{table}[t]
+\begin{table}[H]
 \centering
 \small
 \begin{tabular}{lll}
