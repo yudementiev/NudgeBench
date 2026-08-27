@@ -23,6 +23,15 @@
 \usepackage[hidelinks]{hyperref}
 \usepackage{url}
 
+% Default float parameters leave large gaps when several tables compete for the
+% top of a page; these let floats share a page with more text.
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.75}
+\setcounter{topnumber}{3}
+\setcounter{totalnumber}{4}
+
 \newcommand{\MCTA}{\textsc{Minimum-Cost Task Alignment}}
 \newcommand{\tw}{\mathrm{tw}}
 
@@ -46,8 +55,9 @@ a formal objective, a solver, or any guarantee that an edit constrains
 present-biased planning on task graphs formalises exactly this setting, and the
 accompanying \MCTA{} problem asks for the cheapest edit forcing every feasible
 trajectory to reach the goal and perform a prescribed set of critical actions. The
-theory is well developed and has never been executed. We release MCTA-Bench: 744
-task graphs derived from published curricula and scientific workflow traces,
+theory is well developed and has never been executed. We release MCTA-Bench: 18\,045
+task graphs from four domains---agent tool decompositions, university curricula and
+scientific workflow traces---
 annotated with the structural parameters that govern tractability; six parametric
 instance families whose decision thresholds are placed analytically; exact and
 heuristic solvers; and an agent-in-the-loop probe that recovers an agent's discount
@@ -111,14 +121,10 @@ abandons if $\min_P \zeta(P) > \beta r$, and otherwise commits to $e_1$ and
 repeats. Ties are broken arbitrarily, so the model induces a \emph{set} of feasible
 trajectories rather than a single path. \MCTA{} seeks $S \subseteq E$ minimising
 $\sum_{e \in S} c(e)$ such that in $G - S$ every feasible trajectory reaches $t$ and
-traverses every arc of $T$. Costs are real-valued: an auxiliary arc given a negative
-deletion cost is one the solver pays to \emph{keep}, which lets a single objective
-carry both deletion and paid addition.
-
-Figure~\ref{fig:example} shows why blocking the tempting route is not generally
-enough. The agent takes the cheap shortcut; deleting it merely diverts the agent
-onto a different route that still skips the critical action; only adding an
-auxiliary arc aligns it.
+traverses every arc of $T$. Costs are real-valued, so an auxiliary arc with a
+negative deletion cost is one the solver pays to \emph{keep}: a single objective
+carries both deletion and paid addition. Figure~\ref{fig:example} shows why blocking
+the tempting route is not generally enough.
 
 \begin{figure}[t]
 \centering
@@ -164,25 +170,65 @@ perceived cost the paper states, and those numbers are the test suite.}
 The benchmark has three parts: instances derived from published data, instance
 families generated to a specification, and the tooling that makes both measurable.
 
-\subsection{Instances from published data}
+\subsection{A taxonomy of instances}
 
 \begin{table}[t]
 \centering
-\begin{tabular}{lrrll}
+\small
+\begin{tabular}{llrrrrr}
 \toprule
-Corpus & Instances & Discriminating & Weights & Source \\
+Domain of origin & Source & Instances & Branching & Discrim. & Arcs (med.) & $\tw$ \\
 \midrule
-Caltech curricula       & 169 & 32 (19\%)  & synthetic & \cite{stavrinides2023} \\
-Johns Hopkins curricula & 533 & 115 (22\%) & synthetic & \emph{ibid.}, from prose \\
-Scientific workflows    &  42 & ---        & measured runtimes & WfCommons~\cite{wfcommons} \\
+\multicolumn{7}{l}{\emph{Agent task decompositions} --- synthetic weights} \\
+\quad everyday APIs   & TaskBench~\cite{taskbench} & 4\,318 &   275 &   0 & 2--9 (4)     & 2 \\
+\quad multimedia      & TaskBench                  & 5\,548 &   525 &  21 & 2--11 (4)    & 2 \\
+\quad HuggingFace     & TaskBench                  & 7\,435 &   775 &  42 & 2--11 (4)    & 2 \\
+\midrule
+\multicolumn{7}{l}{\emph{Human curricula} --- synthetic weights} \\
+\quad Caltech         & \cite{stavrinides2023}     &   169 &   169 &  28 & 7--30 (14)   & 4 \\
+\quad Johns Hopkins   & \emph{ibid.}, from prose   &   533 &   495 & 119 & 6--180 (23)  & 6 \\
+\midrule
+\multicolumn{7}{l}{\emph{Scientific workflows} --- \textbf{measured runtimes}} \\
+\quad montage         & WfCommons~\cite{wfcommons} &     6 &     6 &   5 & 130--1336 (365) & 18 \\
+\quad soykb           & WfCommons                  &     6 &     6 &   2 & 202--757 (479)  & 12 \\
+\quad five others     & WfCommons                  &    30 &    30 &   1 & 42--1201        & 2--3 \\
 \bottomrule
 \end{tabular}
-\caption{The three corpora. Discriminating instances are those on which a patient
-and a biased agent would walk different routes; only they can measure anything
-about an agent, and Section~\ref{sec:discriminating} explains why the fraction is
-low.}
+\caption{What each domain of origin supplies. \emph{Branching} counts instances
+with any node offering a choice of continuation; fan-in---several inputs to one
+task---is not a decision. \emph{Discriminating} counts those on which a patient and
+a biased agent walk different routes, which is the only kind that can measure an
+agent at all. Reproduce with \texttt{scripts/taxonomy.py}.}
 \label{tab:corpus}
 \end{table}
+
+Table~\ref{tab:corpus} is the benchmark's central artefact, and its middle columns
+carry a result. \textbf{The domain agents actually operate in barely produces
+environments that can pose the question.} Of 17\,301 agent task decompositions,
+1\,575 contain any choice of continuation and 63 are discriminating; the everyday
+API domain contains none whatsoever. Their dependency structure is overwhelmingly
+fan-in, and their graphs are tiny---a median of four arcs, treewidth two. Human
+curricula, designed by people for people, are markedly richer: 147 discriminating
+instances from 702, reaching 180 arcs. Scientific workflows are the largest graphs
+in the corpus by an order of magnitude and yield 8 discriminating instances from 42,
+because their parallel fan-out routes are interchangeable.
+
+Two consequences shape how the benchmark should be used. Domain of origin predicts
+structure far better than instance count does, so pooling these sources would report
+an average describing none of them. And parametric families are not padding beside
+real corpora but a necessary complement, supplying on demand the choice structure
+the real data does not contain.
+
+\subsection{Instances from published data}
+
+\textbf{Agent task decompositions.} TaskBench~\cite{taskbench} publishes user
+requests decomposed into tool calls, with the dependency between calls annotated and
+each record labelled by its own topology---a single call, a chain, or a branching
+DAG. Three tool domains ship. An instance is the decomposition bracketed between a
+virtual source and sink, charging each arc the cost of the call it enters. This is
+the only corpus here drawn from agent tasks rather than human ones, which is what
+makes its emptiness in Table~\ref{tab:corpus} informative rather than merely
+disappointing.
 
 \textbf{Course-prerequisite networks.} A course network is a DAG whose arcs run
 from a prerequisite to the course requiring it. An MCTA instance is the
@@ -193,26 +239,21 @@ kept when the closure holds at least six courses and runs at least three deep,
 which excludes the many targets that pose no choice at all. Caltech yields 169 such
 instances from 771 courses, Johns Hopkins 533 from 10\,075.
 
-Two mapping decisions limit what these instances can show, and we state them rather
-than bury them. Prerequisite graphs are \emph{conjunctive}---a course needs all of
-its prerequisites---while an agent path is a \emph{sequence}. An instance therefore
-answers ``how hard is this shape to align'', not ``what should this student enrol
-in''. And the Johns Hopkins network has no cleaned prerequisite column, only
-catalogue prose (``You must take AS.440.602 AND AS.440.606 prior to enrolling in
-AS.440.614''); we extract course codes by pattern and trim the clause naming the
-dependent course. Roughly two blurbs in five express a disjunction that this reading
-turns into a conjunction, which only ever \emph{adds} arcs. That is the safe
-direction: treewidth never falls when arcs are added, so every structural figure we
-report for Johns Hopkins bounds the real curriculum from above.
+One mapping decision limits every corpus here and we state it rather than bury it:
+dependency graphs are \emph{conjunctive}---a task needs all its inputs---while an
+agent path is a \emph{sequence}. An instance therefore answers ``how hard is this
+shape to align'', not ``what should this student enrol in''. Johns Hopkins adds a
+second: it has no cleaned prerequisite column, only catalogue prose, so course codes
+are extracted by pattern. Two blurbs in five express a disjunction that this reading
+turns into a conjunction, which only \emph{adds} arcs---the safe direction, since
+treewidth never falls when arcs are added, so its figures bound the real curriculum
+from above.
 
-\textbf{Scientific workflows.} WfCommons publishes traces of production runs in a
-standard schema, recording both the task dependency graph and how long each task
-actually took. These are the only instances whose weights are measured rather than
-assumed: 42 traces across seven applications, from 22 to 601 tasks. A trace becomes
-an instance by bracketing it between a virtual source and sink, charging each arc
-the runtime of the task it enters. They matter for a reason beyond realism---see
-Section~\ref{sec:c1}, where continuous runtimes turn out to decide tractability as
-much as topology does.
+\textbf{Scientific workflows.} WfCommons publishes traces of production runs
+recording both the dependency graph and how long each task took: 42 traces across
+seven applications, 22 to 601 tasks. These are the only instances whose weights are
+\emph{measured}, which matters beyond realism---Section~\ref{sec:c1} shows those
+continuous runtimes deciding tractability as much as topology does.
 
 \subsection{What makes an instance measure anything}
 \label{sec:discriminating}
@@ -244,12 +285,12 @@ Six parametric families cover what real instances cannot supply on demand: a
 decision threshold placed exactly where an experiment needs it.
 
 \textbf{Calibrated two-route traps.} One route is cheap now and dear later, the
-other splits its cost evenly. Preferring the tempting one requires
-$\textit{immediate} + \beta \cdot \textit{tail} \le 2\,\textit{steady}$, so solving
-for the tail places the flip at any chosen $\beta$. An \emph{integer} variant
-searches whole-number triples instead, since asking a model to total $13.993$ tests
-the wrong thing; a \emph{deep} variant stretches each route into a chain, so that
-comparing them means summing several numbers rather than one.
+other splits its cost evenly; solving
+$\textit{immediate} + \beta \cdot \textit{tail} \le 2\,\textit{steady}$ for the tail
+places the flip at any chosen $\beta$. An \emph{integer} variant searches whole-number
+triples, since asking a model to total $13.993$ tests the wrong thing; a \emph{deep}
+variant stretches each route into a chain, so comparing them means summing several
+numbers rather than one.
 
 \textbf{Compliance families.} Present bias hurts in two distinguishable ways, and
 the paper's own worked example is the second: in Figure~\ref{fig:example} the
@@ -278,22 +319,20 @@ small structural parameter provably fails to rescue the problem.
 
 Every instance carries the parameters Theorem~8 of~\cite{belova2026} is stated in:
 treewidth, pathwidth, vertex cover, feedback vertex set, longest path $p$, distinct
-arc weights $|W|$, and the distinct path weights $|L|$ that the dynamic program is
-exponential in. Three of these are NP-hard, so each is reported as a \emph{certified
-interval} rather than a point: treewidth is floored by minor-min-width and capped by
-the better of two elimination heuristics, each exhibiting an actual decomposition. A
-claim that treewidth is at most 6 is sound whatever the truth; a claim that it
-\emph{is} 6 would not be.
+arc weights $|W|$, and the distinct path weights $|L|$ the dynamic program is
+exponential in. Three are NP-hard, so each is a \emph{certified interval} rather than
+a point---treewidth floored by minor-min-width, capped by the better of two
+elimination heuristics, each exhibiting a real decomposition. ``At most 6'' is sound
+whatever the truth; ``is 6'' would not be.
 
-Two solvers ship. An exact branch and bound calls the polynomial alignment oracle of
-Lemma~2 at every node and prunes against the incumbent, reporting whether optimality
-was actually proved or the search budget ran out. A witness-guided heuristic renders
-the engineer's move as an algorithm: watch the agent take a route it should not,
-block one step of it, repeat. The exact solver is validated against an independent
-brute force written in the test suite rather than the library, so a shared mistake
-cannot hide.
+Two solvers ship: an exact branch and bound calling the polynomial alignment oracle
+at every node and reporting whether optimality was proved or the budget ran out, and
+a witness-guided heuristic rendering the engineer's move as an algorithm---watch the
+agent take a route it should not, block one step, repeat. The exact solver is
+validated against an independent brute force written in the tests rather than the
+library, so a shared mistake cannot hide.
 
-Released: the three corpora as loaders (the data itself is fetched from its authors,
+Released: the four corpora as loaders (the data itself is fetched from its authors,
 not vendored), the six generators, the structural measurement, both solvers, the
 agent probe, and the full transcript of every API call made for this paper---prompt,
 reply, token counts and charge---so that every number can be re-scored without
@@ -500,45 +539,18 @@ and the hand-made one costs $45\%$ more, yet both succeed on every rollout.
 \section{What measuring agents cost us}
 \label{sec:cost}
 
-Four times a defect in our own harness presented as a property of the agent, each
-time plausibly (Table~\ref{tab:defects}). Each would have entered this paper as a
-finding.
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{lll}
-\toprule
-Symptom & Read as & Actually \\
-\midrule
-25\% unparseable replies       & will not follow the format & parser could not read \verb|**MOVE: A5**| \\
-transcript replay missing      & the log is useless         & node order came from set iteration \\
-empty replies, weakest model   & could not solve it         & our output ceiling, exhausted mid-thought \\
-30\% ``truncated'' from one model & our ceiling again       & the provider's content filter \\
-\bottomrule
-\end{tabular}
-\caption{Harness defects that looked like agent behaviour.}
-\label{tab:defects}
-\end{table}
-
-The first is the worst: those episodes were dropped \emph{selectively}, since
-whatever a model chooses to emphasise is not a random slice, so the discount factor
-it produced had been fitted to a biased subsample. The last is instructive in a
-different way---the filter fires on $25\%$ of calls under our uncertainty framing and
-$3\%$ under the neutral one, on the same instances and model, so our own prompt was
-systematically breaking one of the two agents we were comparing.
-
-Three separate defects also came from Python's per-process hash randomisation leaking
-set-iteration order into results, which is why the test suite is checked under
-several hash seeds rather than one. And a fifth failure was of \emph{analysis}, not
-harness: an intersected interval reveals nothing about how many episodes hold its
-edges, and a bound resting on one instance read exactly like a property of a group
-until the robustness check was run. That check now ships with the benchmark.
-
-One limit of the transcript is worth recording, since it bears on reuse: replay saves
-the cost of a rerun only while the interpretation is unchanged. Fixing the parser
-changed which move was read, which changed where the walk went, which required step
-prompts that were never issued.
+Four times a defect in our own harness presented as a property of the agent, and
+each would have entered this paper as a finding: a parser that could not read a
+compliant answer wearing bold, node order leaking from set iteration, our own output
+ceiling exhausted mid-thought, and a provider content filter that our uncertainty
+framing triggered on $25\%$ of calls against $3\%$ for the neutral one. The first is
+the worst, because those episodes were dropped \emph{selectively}---whatever a model
+chooses to emphasise is not a random slice---so the discount factor was fitted to a
+biased subsample. A fifth failure was of \emph{analysis} rather than harness: an
+intersected interval says nothing about how many episodes hold its edges. Every
+failure is now reported by cause, a robustness check ships with the benchmark, and
+Appendix~\ref{app:cost} gives the full account, which we think is the part of this
+work most reusable by anyone else measuring agents.
 
 \section{Limitations}
 
@@ -563,6 +575,47 @@ general graphs at every capability we tested, appears reliably in one identifiab
 structure and not at all in another model---so the question worth asking is not
 whether agents are present-biased but which environments make them so. The benchmark
 exists to ask it, and found its own best instance by being inspectable.
+
+
+\appendix
+
+\section{What measuring agents cost us, in full}
+\label{app:cost}
+
+Four times a defect in our own harness presented as a property of the agent, each
+time plausibly (Table~\ref{tab:defects}). Each would have entered this paper as a
+finding.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+Symptom & Read as & Actually \\
+\midrule
+25\% unparseable replies       & will not follow the format & parser could not read \verb|**MOVE: A5**| \\
+transcript replay missing      & the log is useless         & node order came from set iteration \\
+empty replies, weakest model   & could not solve it         & our output ceiling, exhausted mid-thought \\
+30\% ``truncated'' from one model & our ceiling again       & the provider's content filter \\
+\bottomrule
+\end{tabular}
+\caption{Harness defects that looked like agent behaviour.}
+\label{tab:defects}
+\end{table}
+
+The first is the worst: those episodes were dropped \emph{selectively}, since
+whatever a model chooses to emphasise is not a random slice, so the discount factor
+was fitted to a biased subsample. The last is instructive differently---the filter
+fires on $25\%$ of calls under our uncertainty framing against $3\%$ under the
+neutral one, on the same instances and model, so our own prompt was systematically
+breaking one of the two agents under comparison.
+
+Three further defects came from Python's per-process hash randomisation leaking
+set-iteration order into results, which is why the suite is checked under several
+hash seeds. And a fifth failure was of \emph{analysis}: an intersected interval says
+nothing about how many episodes hold its edges, and a bound resting on one instance
+read exactly like a property of a group until a robustness check was run. That check
+now ships with the benchmark, as does the reporting of every failure by cause.
 
 \begin{thebibliography}{99}
 
@@ -600,6 +653,12 @@ economics.
 S.~Maniu, P.~Senellart, and S.~Jog.
 \newblock An experimental study of the treewidth of real-world graph data.
 \newblock In \emph{ICDT}, pages 12:1--12:18, 2019.
+
+\bibitem{taskbench}
+Y.~Shen et al.
+\newblock TaskBench: benchmarking large language models for task automation.
+\newblock \emph{arXiv:2311.18760}; dataset at
+\url{https://huggingface.co/datasets/microsoft/Taskbench}, MIT licensed.
 
 \bibitem{stavrinides2023}
 P.~Stavrinides and K.~Zuev.
