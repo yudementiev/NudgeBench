@@ -128,7 +128,6 @@ agent of known β and costs nothing.
 | `mcta/probe/` | prompting, exact β recovery, OpenRouter client, aggregation |
 | `scripts/` | one runnable experiment each, all with `--dry-run` |
 | `runs/` | every API call made for the paper: prompt, reply, tokens, cost |
-| `paper/` | the write-up, compilable as-is |
 
 ## Reproducibility
 
