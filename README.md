@@ -26,8 +26,9 @@ shape behaviour more reliably than instructions do, and practitioners make them 
 intuition, with no objective being minimised and no way to check that an edit binds
 every trajectory rather than the one seen in testing.
 
-The Kleinberg–Oren model of time-inconsistent planning formalises this, and ones can asks for the cheapest environments edit that aligns the agent. The theory is
-developed and had never been executed. This repository is its first empirical
+The Kleinberg–Oren model of time-inconsistent planning formalises this, and one can
+then ask for the cheapest edit to the environment that aligns the agent. The theory
+is developed and had never been executed. This repository is its first empirical
 evaluation, and the benchmark that evaluation needed.
 
 ## The instance taxonomy
