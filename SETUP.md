@@ -32,7 +32,7 @@ Create a `.env` file in the repository root. The code reads it by itself — the
 is nothing to source, and it works from any shell and any directory:
 
 ```bash
-cd "/Users/yuru/Inconsistent Planning"
+cd /path/to/mcta-bench
 printf 'OPENROUTER_API_KEY=sk-or-v1-PASTE_YOURS_HERE\n' > .env
 chmod 600 .env
 ```

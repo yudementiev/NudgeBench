@@ -17,11 +17,13 @@ Kleinberg–Oren account of present-biased planning on task graphs, formalises
 exactly this setting, and the accompanying Minimum-Cost Task Alignment problem
 asks for the cheapest edit forcing every feasible trajectory to reach the goal and
 perform a prescribed set of critical actions. The theory is well developed and has
-never been executed. We introduce MCTA-Bench: 744 task graphs drawn from real
-curricula and scientific workflows, annotated with the structural parameters that
-govern tractability; exact and heuristic solvers; and an agent-in-the-loop probe
-that estimates an agent's discount factor exactly rather than by fitting. We
-report three results. Real task graphs are structurally narrow — treewidth in
+never been executed. We release MCTA-Bench: 18,045 task graphs from four
+domains — agent tool decompositions, university curricula and scientific workflow
+traces — annotated with the structural parameters that govern tractability; six
+parametric instance families whose decision thresholds are placed analytically;
+exact and heuristic solvers; and an agent-in-the-loop probe that recovers an
+agent's discount factor exactly rather than by fitting. Real task graphs are
+structurally narrow — treewidth in
 single digits where prior measurements of network data report hundreds — yet
 two of seven workflow families remain intractable regardless, because tractability
 turns on weight diversity as much as on width. The repair an engineer would make

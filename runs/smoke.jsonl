@@ -1,0 +1,1 @@
+{"model": "google/gemini-3.7-flash", "prompt": "Reply with exactly: ready", "reply": "ready", "temperature": 0.0, "effort": null, "sample": 0, "prompt_tokens": 5, "completion_tokens": 67, "cost": 0.0001345125, "latency_ms": 2712.4018329777755, "tag": "", "error": ""}

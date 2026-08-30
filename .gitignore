@@ -11,10 +11,9 @@ __pycache__/
 # Fetched corpora belong to their authors; scripts/fetch_data.sh retrieves them.
 data/
 
-# Experiment outputs. The result summaries are the paper's numbers and are
-# versioned; the raw call transcripts are the audit trail and are large, so they
-# stay local - runs/neutral-baseline keeps a copy of the ones already reported.
-runs/*.jsonl
+# Experiment outputs are versioned in full: the result summaries are the paper's
+# numbers, and the raw call transcripts are the audit trail behind them, so that
+# every reported figure can be re-scored without re-spending. Working files are not.
 runs/*.log
 runs/*.bak
 runs/neutral-baseline/
