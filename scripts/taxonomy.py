@@ -60,9 +60,16 @@ def main() -> int:
           f"{'arcs':>10}{'median':>7}{'tw':>6}")
     print("  " + "-" * 76)
 
+    missing: list[str] = []
+
     print("\n  AGENT TASK DECOMPOSITIONS")
     for domain in taskbench.DOMAINS:
-        decompositions = taskbench.load_domain(domain)
+        try:
+            decompositions = taskbench.load_domain(domain)
+        except FileNotFoundError:
+            missing.append("scripts/fetch_taskbench.py")
+            print(f"  {domain:<22} not fetched")
+            continue
         charges = {}
         instances = []
         for decomposition in decompositions:
@@ -74,7 +81,12 @@ def main() -> int:
 
     print("\n  HUMAN CURRICULA")
     for loader, name in ((cpn.load_caltech, "caltech"), (cpn.load_jhu, "johns hopkins")):
-        network = loader()
+        try:
+            network = loader()
+        except FileNotFoundError:
+            missing.append("scripts/fetch_data.sh")
+            print(f"  {name:<22} not fetched")
+            continue
         charges = {course: rng.choice(PALETTE) for course in network}
         instances = [
             cpn.to_instance(network, target, weight_of=charges.__getitem__)
@@ -83,13 +95,22 @@ def main() -> int:
         summarise(name, instances, "synthetic weights")
 
     print("\n  SCIENTIFIC WORKFLOWS")
-    traces = workflows.load_all()
+    try:
+        traces = workflows.load_all()
+    except FileNotFoundError:
+        missing.append("scripts/fetch_wfinstances.py")
+        traces = []
+        print(f"  {'(all applications)':<22} not fetched")
     for kind in sorted({t.kind for t in traces}):
         family = [t for t in traces if t.kind == kind]
         summarise(kind, [workflows.to_instance(t) for t in family], "measured runtimes")
 
     print("\n  Only instances in the 'discrim.' column can measure an agent: elsewhere")
     print("  a patient and a biased planner produce the same trajectory.")
+
+    # A partial taxonomy is worth printing; silently omitting a domain is not.
+    for script in dict.fromkeys(missing):
+        print(f"\n  Missing a corpus. Fetch it with: {script}")
     return 0
 
 

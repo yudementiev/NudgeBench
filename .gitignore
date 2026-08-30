@@ -27,3 +27,4 @@ data/taskbench/
 
 # The write-up lives with the submission, not in the released benchmark.
 paper/
+runs/smoke.jsonl
