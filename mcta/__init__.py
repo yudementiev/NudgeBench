@@ -1,4 +1,4 @@
-"""MCTA-Bench: alignment of present-biased agents by environment design."""
+"""NudgeBench: alignment of present-biased agents by environment design."""
 
 from .align import Verdict, check, t_avoiding_arcs
 from .model import (

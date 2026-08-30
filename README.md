@@ -1,4 +1,4 @@
-# MCTA-Bench
+# NudgeBench
 
 **A benchmark for alignment by environment design.** Given an agent that plans
 myopically, what is the cheapest edit to its environment that forces *every*

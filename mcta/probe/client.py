@@ -308,8 +308,8 @@ class OpenRouter:
             headers={
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
-                "HTTP-Referer": "https://github.com/mcta-bench",
-                "X-Title": "MCTA-Bench",
+                "HTTP-Referer": "https://github.com/nudgebench",
+                "X-Title": "NudgeBench",
             },
         )
         with urllib.request.urlopen(request, timeout=self.timeout) as response:

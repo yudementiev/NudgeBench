@@ -19,7 +19,7 @@ billing and no separate signup with Anthropic, OpenAI or Google.
 
 **Dashboard → Keys → Create key.**
 
-Name it something like `mcta-bench-phase1`, and — this is the part worth not
+Name it something like `nudgebench-phase1`, and — this is the part worth not
 skipping — **set a credit limit on the key itself**, say $50. The key then cannot
 spend more than that no matter what the code does. Our client enforces its own cap
 too, but a limit at the provider is the one that holds if the code is wrong.
@@ -32,7 +32,7 @@ Create a `.env` file in the repository root. The code reads it by itself — the
 is nothing to source, and it works from any shell and any directory:
 
 ```bash
-cd /path/to/mcta-bench
+cd /path/to/nudgebench
 printf 'OPENROUTER_API_KEY=sk-or-v1-PASTE_YOURS_HERE\n' > .env
 chmod 600 .env
 ```
