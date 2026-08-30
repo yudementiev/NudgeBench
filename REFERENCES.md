@@ -20,11 +20,12 @@ the one that governs.
   ([SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5222564),
   [IZA DP 14625](https://docs.iza.org/dp14625.pdf)) — 86 studies; source of the
   monetary and non-monetary figures above.
-- Augenblick et al., *Estimating present bias and sophistication over effort and
-  money*, Experimental Economics
+- Cerrone, Chakraborty, Kim, Lades, *Estimating present bias and sophistication
+  over effort and money*, Experimental Economics 28(6):1191–1213, 2025
   ([Cambridge Core](https://www.cambridge.org/core/journals/experimental-economics/article/estimating-present-bias-and-sophistication-over-effort-and-money/308B6EA8834BE182081267488BCFF07F))
   — effort β of 0.70–0.79, with sophistication 0.80–0.88. Present bias over real
-  effort is stronger than over money.
+  effort is stronger than over money. (Not Augenblick, who appears in it only as
+  a cited predecessor; we had this misattributed.)
 
 **Caveat we should state ourselves before a reviewer does.** Enke, *Complexity and
 Hyperbolic Discounting* ([HBS WP 24-048](https://www.hbs.edu/ris/Publication%20Files/24-048_304d978e-f730-4523-a9e0-4370f82ebd03.pdf))
