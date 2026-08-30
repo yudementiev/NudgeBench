@@ -120,7 +120,7 @@ agent of known β and costs nothing.
 |---|---|
 | `mcta/model.py` | the instance, the agent's decision rule, feasible trajectories |
 | `mcta/align.py` | T-avoiding arcs, the alignment verdict, violating witnesses |
-| `mcta/generate.py` | six parametric families with analytically placed thresholds |
+| `mcta/generate.py` | nine instance generators with analytically placed thresholds |
 | `mcta/structure.py` | treewidth and friends, as certified intervals |
 | `mcta/solve.py` | exact branch and bound, witness-guided heuristic |
 | `mcta/corpus/` | four corpora as loaders; data is fetched, not vendored |
