@@ -25,6 +25,13 @@ paper/*.out
 
 data/taskbench/
 
-# The write-up lives with the submission, not in the released benchmark.
+# Historical local drafts stay private; the final article is in publication/.
 paper/
+publication/build/
+publication/*.aux
+publication/*.log
+publication/*.out
+publication/*.fls
+publication/*.fdb_latexmk
+publication/*.synctex.gz
 runs/smoke.jsonl

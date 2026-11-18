@@ -10,7 +10,8 @@ expenditure". It paid 15 instead of 13 and said why.
 beta < 1 - small/big, so sweeping the ratio sweeps the threshold. What a two-route
 trap could not ask, this can: since the choice at the next node is identical, an
 agent below the threshold defers again, and the number of deferrals measures how
-far the procrastination actually runs.
+far the deferral runs. Observed deferral is consistent with this model, but does
+not uniquely distinguish present bias from local heuristics or planning errors.
 
     .venv/bin/python scripts/e5_deferral.py --dry-run
     .venv/bin/python scripts/e5_deferral.py --model X --cap 3

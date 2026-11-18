@@ -1,15 +1,14 @@
-"""Recovering the present-bias factor from an observed trajectory.
+"""Compute the Kleinberg-Oren discount factors consistent with observed choices.
 
-Rather than grid-searching over beta, we solve for it exactly. At each decision
-the agent revealed a preference, and KO-consistency of that preference is a
-*linear* inequality in beta: choosing e* over e requires
+Each chosen action contributes a linear inequality in beta:
 
-    w(e*) + beta * d(head(e*))  <=  w(e) + beta * d(head(e)),
+    w(e*) + beta * d(head(e*)) <= w(e) + beta * d(head(e)).
 
-so each alternative contributes a half-line and the whole trajectory pins beta to
-an interval. An empty interval is itself a finding - it means no present-biased
-agent of any strength would have behaved this way, and the Kleinberg-Oren model
-does not describe this agent at all.
+Intersecting these constraints gives a model-consistent interval without a beta
+parameter grid. Arithmetic uses floats with TOLERANCE for comparisons. An empty
+interval rejects a common beta under these constraints. A nonempty interval does
+not establish a unique internal discount factor or identify the behavioural
+mechanism: other decision rules may generate the same observed choices.
 """
 
 from __future__ import annotations
@@ -56,10 +55,10 @@ class BetaFit:
 
     @property
     def implies_present_bias(self) -> bool:
-        """Whether every explanation of this trajectory requires beta < 1.
+        """Whether every model-consistent explanation requires beta < 1.
 
-        This is the finding E1 is looking for: behavior that no patient agent
-        would produce, but a discounting one would.
+        This is conditional on the KO model, not a diagnosis excluding local-cost
+        heuristics or planning errors.
         """
         return self.feasible and self.upper < 1.0 - TOLERANCE
 
@@ -67,10 +66,10 @@ class BetaFit:
         if not self.feasible:
             where = self.infeasible_at
             detail = f" at {where.node}: {where.note}" if where else ""
-            return f"no beta explains this trajectory{detail}"
+            return f"no beta explains this trajectory under the model{detail}"
         if self.consistent_with_patience:
-            return f"beta in [{self.lower:.4f}, 1] - consistent with a patient agent"
-        return f"beta in [{self.lower:.4f}, {self.upper:.4f}] - requires present bias"
+            return f"beta in [{self.lower:.4f}, 1] - consistent with a patient agent under the model"
+        return f"beta in [{self.lower:.4f}, {self.upper:.4f}] - requires beta < 1 under the model"
 
 
 def beta_interval(

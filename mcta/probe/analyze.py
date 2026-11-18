@@ -1,18 +1,9 @@
-"""Turning episodes into the numbers an experiment reports.
+"""Aggregate episodes and intersect their model-consistent beta intervals.
 
-The central move is intersecting the beta intervals of many episodes. One episode
-constrains beta loosely - a single trap says only "below 0.745" - but a sweep of
-traps calibrated across a band brackets it from both sides, and the intersection is
-far tighter than any one of them.
-
-That intersection carries an assumption worth stating rather than burying: it
-treats beta as one stable property of the agent, the same on every instance. If the
-agent is not like that - if it discounts differently depending on the graph, or is
-not discounting at all - the intersection comes out empty. So an empty result is
-not a failed measurement. It is the finding that the Kleinberg-Oren model, which
-has exactly one free parameter, does not describe this agent, and the conflicting
-episodes are reported so the disagreement can be looked at rather than averaged
-away.
+The intersection assumes a common beta across the observed instances. An empty
+intersection rejects that shared parameter under the tested model constraints;
+a nonempty one does not establish a unique internal parameter or mechanism.
+Conflicting episodes are retained for inspection rather than averaged away.
 """
 
 from __future__ import annotations
@@ -47,7 +38,7 @@ class Interval:
         if not self.consistent:
             return (
                 f"no single beta fits all {self.contributing} episodes "
-                f"({len(self.conflicts)} in conflict) - the model does not describe this agent"
+                f"({len(self.conflicts)} in conflict) - the model does not describe this agent on these observations with a shared beta"
             )
         if self.upper >= 1.0 - TOLERANCE:
             return f"beta in [{self.lower:.3f}, 1] over {self.contributing} episodes"
@@ -125,9 +116,8 @@ class Cell:
     def arithmetic_rate(self) -> float:
         """How often the agent totalled its own stated route correctly.
 
-        This is the control that keeps an agent which cannot add from being read as
-        an agent which discounts. A low rate here invalidates everything else in the
-        cell rather than merely weakening it.
+        A low rate makes behavioural interpretation harder. A high rate verifies
+        route totals, but does not exclude local heuristics or planning errors.
         """
         scored = [e.arithmetic_correct for e in self.episodes if e.arithmetic_correct is not None]
         return sum(scored) / len(scored) if scored else float("nan")

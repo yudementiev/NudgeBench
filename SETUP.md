@@ -1,112 +1,61 @@
-# Setting up OpenRouter
+# Running NudgeBench
 
-One account gives access to every model the experiments use. Written for someone
-who has not used it before.
+Python 3.11 or newer is required. Run commands from the repository root.
 
-## 1. Account and credits
-
-1. Sign up at **https://openrouter.ai** with email, Google or GitHub. No card is
-   needed to create the account.
-2. In the left sidebar open **Credits → Add Credits**. The minimum purchase is
-   **$5**; **$25 covers all of phase 1** ($41.50 is the planning figure including
-   a 40% margin, so $50 leaves room to rerun).
-   Cards, AliPay and USDC are accepted.
-
-Credits are prepaid and shared across every model — there is no per-provider
-billing and no separate signup with Anthropic, OpenAI or Google.
-
-## 2. Create a key with a spending limit
-
-**Dashboard → Keys → Create key.**
-
-Name it something like `nudgebench-phase1`, and — this is the part worth not
-skipping — **set a credit limit on the key itself**, say $50. The key then cannot
-spend more than that no matter what the code does. Our client enforces its own cap
-too, but a limit at the provider is the one that holds if the code is wrong.
-
-Optionally set an expiry date.
-
-## 3. Point the code at it
-
-Create a `.env` file in the repository root. The code reads it by itself — there
-is nothing to source, and it works from any shell and any directory:
+## Offline checks
 
 ```bash
-cd /path/to/nudgebench
-printf 'OPENROUTER_API_KEY=sk-or-v1-PASTE_YOURS_HERE\n' > .env
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m pytest tests/ -q
+.venv/bin/python scripts/e1.py --dry-run
+.venv/bin/python scripts/e5_deferral.py --dry-run
+```
+
+These commands do not call a model API. Corpus-dependent tests skip when the data
+has not been fetched. To run those tests and the E4 reference-agent check:
+
+```bash
+./scripts/fetch_data.sh
+.venv/bin/python scripts/fetch_taskbench.py
+.venv/bin/python scripts/fetch_wfinstances.py
+.venv/bin/python -m pytest tests/ -q
+.venv/bin/python scripts/e4.py --dry-run
+```
+
+The fetchers download the third-party corpora; they do not purchase model calls.
+`e4.py --dry-run` needs Caltech data even though it uses a reference agent.
+A successful dry run validates the pipeline against that reference agent, not a
+behavioural mechanism in an LLM.
+
+## Live OpenRouter experiments
+
+Live runs make paid requests. Use an account and API key from
+[OpenRouter](https://openrouter.ai), with a provider-side spending limit appropriate
+to the run. Model availability, prices and account interfaces can change; check
+them before starting. The identifiers and prices in `scripts/e1.py` record the
+study configuration and are not a live price feed.
+
+Place the key in an untracked `.env` file in the repository root:
+
+```dotenv
+OPENROUTER_API_KEY=YOUR_KEY
+```
+
+The client reads this file automatically. An existing `OPENROUTER_API_KEY`
+environment variable takes precedence. Protect the file and verify it is ignored:
+
+```bash
 chmod 600 .env
+git check-ignore -v .env
 ```
 
-`.env` is gitignored, so the key cannot be committed by accident. Verify:
+Do not add the key to tracked files or transcripts.
+
+Inspect the current provider model list before using the recorded identifiers:
 
 ```bash
-git check-ignore -v .env      # should print the .gitignore rule
-git status --short             # .env must not appear
-```
-
-An `export OPENROUTER_API_KEY=...` in the shell still works and takes precedence
-over the file, which is handy for running one command against a different key.
-
-Never paste the key into a tracked file, and never into a prompt to a model.
-
-## 4. Check it works, for about a cent
-
-```bash
-.venv/bin/python -c "
-from mcta.probe import Ledger, OpenRouter, Pricing, Transcript
-agent = OpenRouter('google/gemini-3.7-flash', Pricing(0.375, 1.875),
-                   Ledger(cap=0.05), Transcript('runs/smoke.jsonl'))
-print(agent('Reply with exactly: ready'))
-"
-```
-
-If this prints `ready`, the account, credits, key and client are all wired up.
-
-Common failures:
-
-| Symptom | Cause |
-|---|---|
-| `OPENROUTER_API_KEY is not set` | the export did not reach this shell |
-| 401 in the transcript's `error` field | key wrong, or revoked |
-| 402 | out of credits |
-| 404 | model id wrong — see §6 |
-
-## 5. Check what the models will actually honour
-
-Two parameters decide whether experiments are meaningful, and both are worth a few
-cents to verify rather than discovering mid-run:
-
-```bash
-.venv/bin/python -c "
-import json
-from mcta.probe import Ledger, Pricing, Transcript, probe_capabilities
-print(json.dumps(probe_capabilities(
-    'google/gemini-3.7-flash', Pricing(0.375, 1.875),
-    Ledger(cap=0.20), Transcript('runs/caps.jsonl')), indent=2))
-"
-```
-
-- **`varies_with_temperature`** must be true for any model used in **E4**, which
-  measures a fraction over the sampling distribution. Note that a handful of
-  samples of a short answer can collide by chance and look deterministic — treat a
-  false here as "probe again with more samples", not as settled.
-- **`honours_effort`** must be true for the **reasoning-effort sweep**, which is
-  two thirds of the phase-1 budget. It is read off `reasoning_tokens`, not off the
-  visible reply: a model asked for one number answers with one number at every
-  effort while the thinking behind it varies several-fold.
-
-Measured on this account: gemini-3.7-flash moves 205 → 526 reasoning tokens from
-low to high, claude-opus-5 moves 45 → 78, and gpt-5.6-sol barely moves at 38 → 40,
-which makes it a weak candidate for the sweep.
-
-## 6. Model ids change
-
-Ids are exact strings and some carry date suffixes — `deepseek/deepseek-v4-pro-20260813`,
-not `deepseek/deepseek-v4-pro`. A near miss fails on the first call. Before a
-campaign, check the live list against `PRICES` in `scripts/e1.py`:
-
-```bash
-curl -s https://openrouter.ai/api/v1/models | .venv/bin/python -c "
+curl -fsS https://openrouter.ai/api/v1/models | .venv/bin/python -c "
 import json, sys
 from scripts.e1 import PRICES
 live = {m['id'] for m in json.load(sys.stdin)['data']}
@@ -115,33 +64,62 @@ for name in sorted(PRICES):
 "
 ```
 
-## 7. Run the experiments
+Confirm the model's supported sampling and effort parameters as well as its
+identifier. `probe_capabilities` in `mcta.probe.client` can perform a small paid
+probe; short repeated answers can coincide by chance, so its result is diagnostic
+rather than a guarantee of determinism or stochasticity.
 
-In this order. Each step is cheap and each one tells you whether the next is worth
-starting.
+Examples below use the study's recorded model identifiers. Use them only after
+checking current availability and pricing:
 
 ```bash
-.venv/bin/python scripts/e1.py --dry-run            # free; pipeline self-test
 .venv/bin/python scripts/e1.py --pilot --model google/gemini-3.7-flash --cap 1
 .venv/bin/python scripts/e1.py --model google/gemini-3.7-flash --cap 2
-.venv/bin/python scripts/e1.py --model anthropic/claude-opus-5 \
-    --effort low,medium,high --cap 25
 .venv/bin/python scripts/e4.py --model google/gemini-3.7-flash --rollouts 20 --cap 5
+.venv/bin/python scripts/e5_deferral.py --model google/gemini-3.7-flash \
+  --repetitions 20 --temperature 1 --cap 3
 ```
 
-`--cap` is a hard ceiling in dollars, checked against the worst case *before* each
-call, so a run stops below it rather than just after.
+`--cap` limits the client's estimated spending using the configured prices and
+output-token ceiling. Its accuracy depends on those prices and provider accounting;
+keep the provider-side limit as well. A low cap may stop a campaign before all
+requested episodes complete.
 
-Every call is written to `runs/*.jsonl` with its tokens and cost. Re-running a
-command replays from that file instead of paying again, so re-analysis is free and
-an interrupted run resumes where it stopped. Delete the file to force fresh calls.
+## Archived results and replay
 
-## What each run answers
+`runs/*.json` contains result summaries; `runs/*.jsonl` contains the recorded
+requests and replies. The transcripts used for the paper are versioned. Keep them
+unchanged when preparing a new campaign, and use a separate checkout for new runs.
+
+The client checks a replay index before making a request. A replay match includes
+the exact model, prompt, temperature, effort and sample identifier. An unmatched
+request may become a live call. For analysis that must remain offline, use a zero
+spending cap and no API key; a missing match will stop rather than buy a new call.
+
+For example, these scripts use a zero-cap ledger to re-score the archived deferral
+transcripts (no API key is needed for matched records):
+
+```bash
+.venv/bin/python scripts/robustness_e5.py google/gemini-3.7-flash 20 1
+.venv/bin/python scripts/robustness_e5.py anthropic/claude-opus-5 20 1
+```
+
+A failed replay is not a fresh empirical result: investigate the missing record or
+configuration mismatch. A live rerun is subject to provider sampling and model
+changes, so it need not reproduce the archived outputs exactly.
+
+## What the experiments measure
 
 | Command | Question |
 |---|---|
-| `e1.py --dry-run` | does our own pipeline work at all |
-| `e1.py --pilot` | does the model answer in a format we can parse |
-| `e1.py` | is the agent present-biased, and what is its β |
-| `e1.py --effort ...` | does β climb as the agent is given more room to think |
-| `e4.py` | do theory-derived edits steer it, on every rollout or only most |
+| `e1.py --dry-run` | Does the pipeline recover an interval containing the reference beta? |
+| `e1.py --pilot` | Can responses be parsed and scored under this configuration? |
+| `e1.py` | Which beta values are consistent with the observed choices under the model? |
+| `e1.py --effort ...` | How do model-consistent intervals change across effort settings? |
+| `e4.py` | How do observed compliance and repair costs compare across conditions? |
+| `e5_deferral.py` | How often and how repeatedly does the agent defer? |
+
+Model-consistent intervals do not identify an internal psychological parameter.
+Deferral does not uniquely distinguish present bias from other decision rules.
+Finite-rollout compliance is empirical evidence, not a guarantee over an LLM's
+entire sampling distribution.

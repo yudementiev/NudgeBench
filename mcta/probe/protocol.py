@@ -65,8 +65,8 @@ class Episode:
     def arithmetic_correct(self) -> bool | None:
         """Whether the stated total matches the stated route. None if unscoreable.
 
-        This is the control that separates present bias from an inability to add,
-        so it has to be forgiving of presentation and strict about arithmetic. An
+        This checks arithmetic, but does not distinguish present bias from local
+        heuristics or planning errors. It allows reasonable rounding. An
         agent that answers 13.99 for 13.993 has added correctly and reported to a
         sensible precision; the tolerance is relative for that reason, and marking
         such an answer wrong would quietly discredit every other number in the cell.

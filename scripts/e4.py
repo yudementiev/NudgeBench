@@ -7,12 +7,12 @@ samples many rollouts at temperature above zero.
     .venv/bin/python scripts/e4.py --dry-run
     .venv/bin/python scripts/e4.py --model X --rollouts 20
 
-The measurement is a *fraction of rollouts*, not one trajectory, and that is the
-point. A present-biased agent at temperature is exactly the nondeterministic
-tie-breaker the paper's formulation is written for: prompting shifts the mode of
-its behavior, while editing the environment is supposed to constrain the whole
-support. If the optimal edit succeeds on every rollout and the hand-made one only
-on most, that difference is what the theory buys.
+The measurement is a fraction of observed rollouts, with Wilson intervals.
+Stochastic LLM sampling need not choose a model-optimal action, so it is not
+arbitrary tie-breaking within the KO model. MCTA guarantees concern model-feasible
+trajectories; empirical success does not guarantee the full sampling distribution.
+Comparing repair costs and observed success does not show that present bias is
+necessary for the intervention, or establish superiority over prompting.
 """
 
 from __future__ import annotations
@@ -72,7 +72,7 @@ def build_cases(limit: int) -> list[Case]:
     """Instances a present-biased agent fails, paired with both repairs.
 
     Synthetic ones first, because `costly_compliance` puts the required action on a
-    route no agent takes unaided and so is guaranteed to need an intervention; then
+    route no KO agent takes unaided, so alignment under that model needs an edit; then
     real curricula, which supply the shapes.
     """
     cases: list[Case] = []

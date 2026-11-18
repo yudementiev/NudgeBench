@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "Please cite the associated FAST NeurIPS 2026 paper using the BibTeX entry in README.md."
+type: software
+title: "NudgeBench: A Benchmark for Alignment by Environment Design"
+authors:
+  - family-names: Dementiev
+    given-names: Yuriy
+    affiliation: ITMO University
+repository-code: "https://github.com/yudementiev/NudgeBench"
+url: "https://github.com/yudementiev/NudgeBench"
+license: MIT
+keywords:
+  - present-biased planning
+  - environment design
+  - task graphs
+  - agent evaluation
+preferred-citation:
+  type: conference-paper
+  title: "Nudging the Graph, Not the Agent: A Benchmark for Alignment by Environment Design"
+  authors:
+    - family-names: Dementiev
+      given-names: Yuriy
+      affiliation: ITMO University
+  collection-title: "Foundations of Agentic Systems Theory (FAST), NeurIPS 2026 Workshop"
+  year: 2026
+  url: "https://github.com/yudementiev/NudgeBench/blob/main/publication/FAST2026_NudgeBench_camera_ready.pdf"

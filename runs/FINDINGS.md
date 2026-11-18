@@ -1,4 +1,8 @@
-# E1 results, gemini-3.7-flash
+# Archived E1 results, gemini-3.7-flash
+
+These notes describe the initial E1 runs, not the complete study. See the
+[README](../README.md) and [camera-ready paper](../publication/FAST2026_NudgeBench_camera_ready.pdf)
+for the later corpus, deferral and intervention experiments.
 
 All runs: two framings (abstract, effort), fresh randomised labels per episode,
 temperature 0. Reproduce with `scripts/e1.py`; transcripts in `runs/*.jsonl`.
@@ -9,35 +13,20 @@ temperature 0. Reproduce with `scripts/e1.py`; transcripts in `runs/*.jsonl`.
 | agentic [0.80, 0.99] | 1 arc | 100 | 100% | 0% | 100% | **[0.983, 1]** |
 | agentic [0.80, 0.99] | 6 arcs | 60 | 100% | 0% | 100% | **[0.958, 1]** |
 
-Spend to date: $0.95.
+Recorded spend for these initial runs: $0.95 (not the total study budget).
 
-## What this says
+## Interpretation
 
-**No present bias, at any threshold or depth tested.** The agent resisted even the
-strongest trap — one hour of work now against 118 later, versus 59 and 59 — and
-took the cost-minimal route in every single episode.
+The agent chose the cost-minimal route in every reported episode, including the
+strongest two-route trap. The compatible beta intervals include 1, so these
+observations are consistent with patient planning under the model. They do not
+identify a unique internal discount factor or exclude small present bias that
+these instances cannot resolve.
 
-**It is not a competence artifact.** The arithmetic control passes at 100%
-throughout: asked to state a route and total it, the agent totals correctly. So
-this is a patient planner, not a model too weak to compare the branches.
+The arithmetic control passes throughout. This verifies the reported route totals;
+it does not rule out alternative decision rules or planning errors in other settings.
+Depth-six traps also produce patient-compatible choices.
 
-**Nor is it lack of anything to look ahead at.** The depth-6 traps make each branch
-a chain of six arcs, so choosing correctly means summing six numbers per side. The
-result barely moves.
-
-## What it means for the paper
-
-The Kleinberg–Oren model does not describe this agent's route choice on graphs of
-this size. Two readings, and they are not equally comfortable:
-
-1. Capable models plan patiently whenever the graph is fully visible, and
-   present-bias models transfer to LLM agents no better than they had to. A clean
-   negative result, and squarely the kind of thing a workshop about importing
-   outside theory should want reported.
-2. The probes have not yet reached the regime where bounded rationality appears.
-   Every instance so far fits comfortably in one prompt. Real harnesses do not, and
-   neither do the larger corpus instances (Johns Hopkins closures reach 55 nodes).
-
-Distinguishing these is the next experiment, and it is cheap. Until it is run, the
-honest claim is the narrow one: **on fully-visible task graphs of up to twelve
-arcs, gemini-3.7-flash is not present-biased.**
+These results apply to the tested fully visible graphs and settings. Subsequent
+deferral experiments found a different pattern in one model, as reported in the
+camera-ready paper. The archived numbers and transcripts remain unchanged.

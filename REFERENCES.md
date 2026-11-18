@@ -1,13 +1,15 @@
 # External grounding
 
 What in this benchmark rests on outside evidence, what that evidence actually
-says, and where it is used. Kept separate so co-authors can audit the claims
-before they reach the paper.
+says, and where it is used. These provenance notes include the original study
+planning context; the [camera-ready paper](publication/FAST2026_NudgeBench_camera_ready.pdf)
+is the final account of the reported experiments.
 
 ## Present-bias factors
 
 Instances are calibrated so that the agent's behavior flips at a `beta` that real
-agents are known to occupy. Weights in our model are effort, so the effort band is
+human participants have been estimated to occupy. This is a calibration reference,
+not an established range for LLMs. Weights in our model are effort, so the effort band is
 the one that governs.
 
 | Reward type | β | 95% CI | Used for |
@@ -17,7 +19,9 @@ the one that governs.
 | Real effort | 0.70–0.79 | — | **primary calibration band** |
 
 - Cheung, Tymula, Wang, *A meta-analysis of quasi-hyperbolic discounting*
-  ([SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5222564),
+  Management Science, published online April 8, 2026
+  ([publisher](https://doi.org/10.1287/mnsc.2023.04003),
+  [SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5222564),
   [IZA DP 14625](https://docs.iza.org/dp14625.pdf)) — 86 studies; source of the
   monetary and non-monetary figures above.
 - Cerrone, Chakraborty, Kim, Lades, *Estimating present bias and sophistication
@@ -33,8 +37,9 @@ argues that structural estimates of present bias are inflated when the effect of
 decision complexity is ignored, and the meta-analysis itself reports weak support
 for the specifically *quasi-hyperbolic* functional form. We use these numbers to
 place instances in a plausible range, not to claim the Kleinberg–Oren discount is
-the true model of anyone. E1 tests that separately, and complexity is a confound
-we control for through the arithmetic condition.
+the true model of anyone. E1 checks consistency with its choice constraints.
+The arithmetic condition checks route totals but does not eliminate complexity,
+local heuristics or planning errors as alternative explanations.
 
 ## Treewidth of real graphs — a citation to revisit
 
@@ -71,7 +76,9 @@ and it is ours.
 ### Scientific workflows — where the simple story breaks
 
 Data: **WfCommons WfInstances**, https://github.com/wfcommons/WfInstances (LGPL-3.0)
-— traces of real production runs in WfFormat, with **measured task runtimes**, so
+— see T. Coleman et al., *WfCommons: A framework for enabling scientific workflow
+research and development*, Future Generation Computer Systems 128:16–27, 2022
+([DOI](https://doi.org/10.1016/j.future.2021.09.043)). These are traces of real production runs in WfFormat, with **measured task runtimes**, so
 these are the first instances whose weights are not an assumption. Fetch with
 `scripts/fetch_wfinstances.py`; 42 traces across 7 applications.
 
@@ -128,7 +135,10 @@ Structural generators imitate shapes catalogued for scientific workflows:
 layered fan-out/fan-in (Montage, CyberShake), independent parallel pipelines
 (Epigenomics), and series-parallel nesting.
 
-- Bharathi et al., *Characterization of scientific workflows* — the standard
+- S. Bharathi, A. Chervenak, E. Deelman, G. Mehta, M.-H. Su and K. Vahi,
+  *Characterization of scientific workflows*, Third Workshop on Workflows in
+  Support of Large-Scale Science (WORKS), pp. 1–10, IEEE, 2008
+  ([publication](https://www.isi.edu/results/publications/19295/characterization-of-scientific-workflows/)) — the standard
   characterisation of Montage, CyberShake, Epigenomics, LIGO and SIPHT. The
   Pegasus project publishes DAG representations of these workflows, which are a
   candidate corpus for E2.

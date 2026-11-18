@@ -1,7 +1,8 @@
 """E1: does an agent making local decisions plan like a present-biased one?
 
 Sweeps traps calibrated across an empirically attested band of beta, in two
-framings, and reads the agent's own beta off where it stops falling for them.
+framings, and computes the interval of beta values consistent with its choices
+under the model. This does not identify a unique internal discount factor.
 
     .venv/bin/python scripts/e1.py --dry-run          # whole pipeline, no API
     .venv/bin/python scripts/e1.py --pilot --model X  # a few dollars
@@ -127,7 +128,7 @@ def dry_run(args) -> int:
             ok = False
 
     print(f"\nTraps calibrated across the {args.band} band {BETA_BANDS[args.band]}.")
-    print("Pipeline recovers the beta it was driven with." if ok else "\nPIPELINE BROKEN.")
+    print("Model-consistent intervals contain the reference beta." if ok else "\nPIPELINE BROKEN.")
     return 0 if ok else 1
 
 
